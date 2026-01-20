@@ -19,6 +19,7 @@ python-dotenv==1.0.0
 
 # Email
 sendgrid==6.11.0
+email-validator==2.1.0
 
 # CORS
 fastapi-cors==0.0.6
