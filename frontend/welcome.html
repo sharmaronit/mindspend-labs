@@ -3,6 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Check if already logged in, redirect to dashboard -->
+    <script>
+      (async () => {
+        try {
+          const token = localStorage.getItem('supabase.auth.token');
+          const user = localStorage.getItem('supabase.auth.user');
+          if (token && user) {
+            window.location.replace('/index.html');
+          }
+        } catch (e) {
+          console.error('Auth check failed:', e);
+        }
+      })();
+    </script>
     <title>MindSpend Labs - Behavioral Finance Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
