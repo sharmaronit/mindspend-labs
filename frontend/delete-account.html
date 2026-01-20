@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Account - MindSpend Labs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    
+    <!-- Unified Storage Manager -->
+    <script src="utils/storage.js"></script>
+    
+    <!-- Supabase Configuration -->
+    <script src="utils/supabase.js" defer></script>
+    
+    <!-- Authentication & Navigation -->
+    <script src="utils/auth.js" defer></script>
+    <script src="utils/api.js" defer></script>
+    <script src="utils/navigation.js" defer></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            min-height: 100vh;
+            color: #2d3436;
+            overflow-x: hidden;
+        }
+
+        /* Animated scrolling background */
+        @-webkit-keyframes bg-scrolling-reverse {
+            100% { background-position: 50px 50px; }
+        }
+        @-moz-keyframes bg-scrolling-reverse {
+            100% { background-position: 50px 50px; }
+        }
+        @-o-keyframes bg-scrolling-reverse {
+            100% { background-position: 50px 50px; }
+        }
+        @keyframes bg-scrolling-reverse {
+            100% { background-position: 50px 50px; }
+        }
+
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC") repeat 0 0;
+            -webkit-animation: bg-scrolling-reverse 0.92s infinite linear;
+            -moz-animation: bg-scrolling-reverse 0.92s infinite linear;
+            -o-animation: bg-scrolling-reverse 0.92s infinite linear;
+            animation: bg-scrolling-reverse 0.92s infinite linear;
+        }
+
+        .content-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 90px;
+            padding-bottom: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 560px;
+            padding: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 20px rgba(214, 48, 49, 0.15);
+            border: 2px solid rgba(214, 48, 49, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            background: rgba(214, 48, 49, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #d63031;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.95rem;
+            color: #636e72;
+        }
+
+        .warning-box {
+            background: rgba(214, 48, 49, 0.05);
+            border: 2px solid rgba(214, 48, 49, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .warning-title {
+            color: #d63031;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .warning-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .warning-list li {
+            color: #636e72;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .warning-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #d63031;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .info-section {
+            background: rgba(107, 144, 128, 0.05);
+            border: 1px solid rgba(107, 144, 128, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-title {
+            color: #4d7464;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-text {
+            color: #636e72;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0ddd5;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Sora', sans-serif;
+            transition: all 0.3s ease;
+            background: #ffffff;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #d63031;
+            box-shadow: 0 0 0 3px rgba(214, 48, 49, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(214, 48, 49, 0.05);
+            border-radius: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #d63031;
+        }
+
+        .checkbox-label {
+            font-size: 0.9rem;
+            color: #2d3436;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: rgba(107, 144, 128, 0.1);
+            color: #4d7464;
+            border: 1px solid rgba(107, 144, 128, 0.3);
+        }
+
+        .message.error {
+            background: rgba(214, 48, 49, 0.1);
+            color: #d63031;
+            border: 1px solid rgba(214, 48, 49, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: 'Sora', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger {
+            background: #d63031;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c62828;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(214, 48, 49, 0.4);
+        }
+
+        .btn-danger:disabled {
+            background: #e8a5a5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6b9080;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a7d6f;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .back-link a {
+            color: #6b9080;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #4d7464;
+            text-decoration: underline;
+        }
+
+        /* Custom Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(214, 48, 49, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #d63031;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+
+        .modal-subtitle {
+            font-size: 0.95rem;
+            color: #636e72;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .modal-warning-list {
+            background: rgba(214, 48, 49, 0.05);
+            border: 2px solid rgba(214, 48, 49, 0.2);
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            list-style: none;
+        }
+
+        .modal-warning-list li {
+            color: #636e72;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .modal-warning-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-warning-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #d63031;
+            font-weight: bold;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: 'Sora', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-cancel {
+            background: #f0f1f2;
+            color: #2d3436;
+            border: 1px solid #dfe6e9;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #e0e2e6;
+            transform: translateY(-2px);
+        }
+
+        .modal-btn-danger {
+            background: #d63031;
+            color: white;
+        }
+
+        .modal-btn-danger:hover {
+            background: #c62828;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(214, 48, 49, 0.3);
+        }
+
+        /* Success Modal Styles */
+        .success-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .success-modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .success-modal-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 520px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+        }
+
+        .success-modal-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(107, 144, 128, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+
+        .success-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4d7464;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .success-modal-content {
+            color: #636e72;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .success-modal-content p {
+            margin-bottom: 0.75rem;
+        }
+
+        .success-modal-content p:last-child {
+            margin-bottom: 0;
+            color: #4d7464;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .success-modal-button {
+            padding: 14px 40px;
+            background: #6b9080;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: 'Sora', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .success-modal-button:hover {
+            background: #5a7d6f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(107, 144, 128, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .card {
+                padding: 2rem 1.5rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .button-group {
+                flex-direction: column-reverse;
+            }
+
+            .modal-card {
+                padding: 1.5rem;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
+            }
+
+            .modal-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Delete Account Confirmation Modal -->
+    <div id="deleteAccountModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-icon">⚠️</div>
+            <h2 class="modal-title">Delete Account?</h2>
+            <p class="modal-subtitle">This action cannot be undone and will permanently remove everything.</p>
+            <ul class="modal-warning-list">
+                <li>Delete ALL your data permanently</li>
+                <li>Close your account immediately</li>
+                <li>Cannot be reversed</li>
+            </ul>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeDeleteAccountModal()">Cancel</button>
+                <button class="modal-btn modal-btn-danger" onclick="proceedWithAccountDeletion()">Delete My Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Deletion Success Modal -->
+    <div id="successModal" class="success-modal-overlay">
+        <div class="success-modal-card">
+            <div class="success-modal-icon">✓</div>
+            <h2 class="success-modal-title">Account Deleted</h2>
+            <div class="success-modal-content">
+                <p>Your MindSpend Labs account has been successfully deleted.</p>
+                <p>All your data has been permanently removed from our system.</p>
+                <p>We're sorry to see you go! Thank you for using MindSpend Labs.</p>
+                <p>If you change your mind, you can always create a new account.</p>
+                <p>Stay financially mindful! 💚</p>
+            </div>
+            <button class="success-modal-button" onclick="goToWelcome()">Return to Welcome</button>
+        </div>
+    </div>
+    
+    <div class="bg-container"></div>
+    
+    <div class="content-wrapper">
+        <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="#d63031"/>
+                    </svg>
+                </div>
+                <h1 class="page-title">Delete Account</h1>
+                <p class="page-subtitle">This action cannot be undone</p>
+            </div>
+
+            <div id="messageContainer"></div>
+
+            <div class="warning-box">
+                <div class="warning-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="#d63031"/>
+                    </svg>
+                    What will be deleted:
+                </div>
+                <ul class="warning-list">
+                    <li>All your financial transaction data and analyses</li>
+                    <li>Your profile information and preferences</li>
+                    <li>All saved insights and reports</li>
+                    <li>Your account will be permanently closed</li>
+                    <li>This action cannot be reversed</li>
+                </ul>
+            </div>
+
+            <div class="info-section">
+                <div class="info-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#6b9080"/>
+                    </svg>
+                    Before you go
+                </div>
+                <p class="info-text">
+                    If you're having issues with your account or our service, we'd love to help! 
+                    Consider reaching out to support instead of deleting your account. You can also 
+                    simply stop using the service without deleting your account.
+                </p>
+            </div>
+
+            <form id="deleteForm">
+                <div class="form-group">
+                    <label class="form-label">Type "DELETE" to confirm</label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        id="confirmText" 
+                        placeholder="Type DELETE in capital letters"
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Enter your password to confirm</label>
+                    <input 
+                        type="password" 
+                        class="form-input" 
+                        id="confirmPassword" 
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="confirmCheckbox" required>
+                    <label for="confirmCheckbox" class="checkbox-label">
+                        I understand this action is permanent and cannot be undone
+                    </label>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="goBack()">Keep My Account</button>
+                    <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>Delete My Account</button>
+                </div>
+            </form>
+
+            <div class="back-link">
+                <a href="profile.html">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="currentColor"/>
+                    </svg>
+                    Back to Profile
+                </a>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Navigation.init();
+
+            // Check authentication
+            const isAuth = await AuthManager.isAuthenticated();
+            if (!isAuth) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Enable button only when all conditions are met
+            const confirmText = document.getElementById('confirmText');
+            const confirmPassword = document.getElementById('confirmPassword');
+            const confirmCheckbox = document.getElementById('confirmCheckbox');
+            const deleteBtn = document.getElementById('deleteBtn');
+
+            function checkFormValidity() {
+                const isTextCorrect = confirmText.value === 'DELETE';
+                const hasPassword = confirmPassword.value.length > 0;
+                const isChecked = confirmCheckbox.checked;
+
+                deleteBtn.disabled = !(isTextCorrect && hasPassword && isChecked);
+            }
+
+            confirmText.addEventListener('input', checkFormValidity);
+            confirmPassword.addEventListener('input', checkFormValidity);
+            confirmCheckbox.addEventListener('change', checkFormValidity);
+        });
+
+        document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const confirmText = document.getElementById('confirmText').value;
+            const password = document.getElementById('confirmPassword').value.trim();
+            const checkbox = document.getElementById('confirmCheckbox').checked;
+
+            // Final validation
+            if (confirmText !== 'DELETE') {
+                showMessage('❌ Please type DELETE exactly as shown (in capital letters)', 'error');
+                return;
+            }
+
+            if (!password) {
+                showMessage('❌ Please enter your password to confirm', 'error');
+                return;
+            }
+
+            if (!checkbox) {
+                showMessage('❌ Please check the box to confirm you understand this action', 'error');
+                return;
+            }
+
+            // Show confirmation modal instead of browser confirm
+            openDeleteAccountModal(password, checkbox);
+        });
+
+        function goBack() {
+            window.location.href = 'profile.html';
+        }
+
+        function showMessage(text, type = 'success') {
+            const container = document.getElementById('messageContainer');
+            const message = document.createElement('div');
+            message.className = `message ${type} show`;
+            message.innerHTML = text; // Use innerHTML to support HTML tags
+            message.style.lineHeight = '1.6';
+            message.style.whiteSpace = 'pre-line';
+            
+            container.innerHTML = '';
+            container.appendChild(message);
+            
+            // Keep longer messages visible longer
+            const displayTime = text.length > 100 ? 8000 : 5000;
+            
+            setTimeout(() => {
+                message.classList.remove('show');
+                setTimeout(() => message.remove(), 300);
+            }, displayTime);
+        }
+
+        // Modal management
+        let pendingPassword = null;
+        let pendingCheckbox = null;
+
+        function openDeleteAccountModal(password, checkbox) {
+            pendingPassword = password;
+            pendingCheckbox = checkbox;
+            const modal = document.getElementById('deleteAccountModal');
+            modal.classList.add('active');
+        }
+
+        function closeDeleteAccountModal() {
+            const modal = document.getElementById('deleteAccountModal');
+            modal.classList.remove('active');
+            pendingPassword = null;
+            pendingCheckbox = null;
+        }
+
+        async function proceedWithAccountDeletion() {
+            closeDeleteAccountModal();
+            
+            // Disable button
+            const btn = document.getElementById('deleteBtn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+
+            try {
+                // Call AuthManager delete account - no password needed, user already authenticated
+                const response = await AuthManager.deleteAccount(pendingPassword);
+
+                if (response.success) {
+                    // Show processing message
+                    showMessage('🔄 Processing account deletion...', 'success');
+                    
+                    setTimeout(() => {
+                        showMessage('✓ Account deletion complete!<br><br>All your data has been permanently removed:<br>• Financial transaction data<br>• Profile information<br>• Saved insights and reports<br>• Account credentials', 'success');
+                    }, 1500);
+                    
+                    // Clear user data from all pages
+                    localStorage.removeItem('mindspend_firstName');
+                    localStorage.removeItem('mindspend_lastName');
+                    localStorage.removeItem('mindspend_username');
+                    localStorage.removeItem('mindspend_email');
+                    
+                    // Show success modal instead of alert
+                    setTimeout(() => {
+                        const successModal = document.getElementById('successModal');
+                        successModal.classList.add('active');
+                    }, 4000);
+                } else {
+                    const errorMsg = response.error || '❌ Failed to delete account. Please try again or contact support.';
+                    showMessage(errorMsg, 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Delete My Account';
+                }
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                showMessage('❌ An unexpected error occurred. Please try again or contact support if the problem persists.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Delete My Account';
+            }
+        }
+
+        function goToWelcome() {
+            // Force complete cleanup before redirect
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Add a marker to prevent accidental re-login
+            localStorage.setItem('accountDeleted', 'true');
+            
+            // Redirect with cache-busting
+            window.location.href = 'welcome.html?t=' + new Date().getTime();
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('deleteAccountModal');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeDeleteAccountModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

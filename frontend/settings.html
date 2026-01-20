@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - MindSpend Labs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    
+    <!-- Unified Storage Manager -->
+    <script src="utils/storage.js"></script>
+    
+    <!-- Supabase Configuration -->
+    <script src="utils/supabase.js" defer></script>
+    
+    <!-- Authentication & Navigation -->
+    <script src="utils/auth.js" defer></script>
+    <script src="utils/api.js" defer></script>
+    <script src="utils/navigation.js" defer></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            min-height: 100vh;
+            color: #2d3436;
+            overflow-x: hidden;
+        }
+
+        /* Animated scrolling background */
+        @-webkit-keyframes bg-scrolling-reverse {
+            100% { background-position: 50px 50px; }
+        }
+        @-moz-keyframes bg-scrolling-reverse {
+            100% { background-position: 50px 50px; }
+        }
+        @-o-keyframes bg-scrolling-reverse {
+            100% { background-position: 50px 50px; }
+        }
+        @keyframes bg-scrolling-reverse {
+            100% { background-position: 50px 50px; }
+        }
+
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC") repeat 0 0;
+            -webkit-animation: bg-scrolling-reverse 0.92s infinite linear;
+            -moz-animation: bg-scrolling-reverse 0.92s infinite linear;
+            -o-animation: bg-scrolling-reverse 0.92s infinite linear;
+            animation: bg-scrolling-reverse 0.92s infinite linear;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+            padding-top: 90px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #4d7464;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: #636e72;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 20px rgba(107, 144, 128, 0.12);
+            border: 1px solid rgba(107, 144, 128, 0.2);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4d7464;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid rgba(107, 144, 128, 0.1);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 0.25rem;
+        }
+
+        .setting-description {
+            font-size: 0.85rem;
+            color: #636e72;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 56px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #dfe6e9;
+            border-radius: 30px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #6b9080;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .select-wrapper {
+            position: relative;
+            min-width: 200px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 16px;
+            border: 2px solid #e0ddd5;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Sora', sans-serif;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #6b9080;
+            box-shadow: 0 0 0 3px rgba(107, 144, 128, 0.1);
+        }
+
+        .select-wrapper::after {
+            content: "▼";
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #636e72;
+            font-size: 0.75rem;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: 'Sora', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #6b9080;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a7d6f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(107, 144, 128, 0.3);
+        }
+
+        .btn-danger {
+            background: #d63031;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c62828;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: rgba(107, 144, 128, 0.1);
+            color: #4d7464;
+            border: 1px solid rgba(107, 144, 128, 0.3);
+        }
+
+        .message.error {
+            background: rgba(214, 48, 49, 0.1);
+            color: #d63031;
+            border: 1px solid rgba(214, 48, 49, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .danger-zone {
+            background: linear-gradient(135deg, rgba(214, 48, 49, 0.08) 0%, rgba(214, 48, 49, 0.04) 100%);
+            border: 2px solid rgba(214, 48, 49, 0.2);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .danger-zone:hover {
+            border-color: rgba(214, 48, 49, 0.4);
+            box-shadow: 0 4px 16px rgba(214, 48, 49, 0.1);
+        }
+
+        .danger-zone-title {
+            color: #d63031;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        .danger-zone .setting-description {
+            color: #d63031;
+            opacity: 0.8;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Custom Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(214, 48, 49, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 0.75rem;
+        }
+
+        .modal-message {
+            font-size: 0.95rem;
+            color: #636e72;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .modal-warning {
+            background: rgba(214, 48, 49, 0.08);
+            border-left: 4px solid #d63031;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            color: #d63031;
+            font-weight: 500;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: 'Sora', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-cancel {
+            background: #f0f1f2;
+            color: #2d3436;
+            border: 1px solid #dfe6e9;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #e0e2e6;
+            transform: translateY(-2px);
+        }
+
+        .modal-btn-danger {
+            background: #d63031;
+            color: white;
+        }
+
+        .modal-btn-danger:hover {
+            background: #c62828;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(214, 48, 49, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .settings-card {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .setting-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .select-wrapper {
+                width: 100%;
+            }
+
+            .modal-card {
+                padding: 1.5rem;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
+            }
+
+            .modal-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <div class="bg-container"></div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-icon">⚠️</div>
+            <h2 class="modal-title">Delete All Analysis Data?</h2>
+            <p class="modal-message">You're about to permanently delete all your financial analysis data including transactions, categories, and insights.</p>
+            <div class="modal-warning">
+                <strong>⚠️ This action cannot be undone.</strong> Please make sure you've exported your data if needed.
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="modal-btn modal-btn-danger" onclick="confirmFinalDelete()">Delete Everything</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-wrapper">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">Settings</h1>
+                <p class="page-subtitle">Customize your MindSpend Labs experience</p>
+            </div>
+
+            <div id="messageContainer"></div>
+
+            <!-- User Account Info -->
+            <div class="settings-card">
+                <h3 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66 5.33-4 8-4z" fill="#6b9080"/>
+                    </svg>
+                    Account Information
+                </h3>
+                <div id="userInfoContainer" style="background: #f5f7fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <p style="color: #636e72; font-size: 0.85rem; margin-bottom: 0.25rem;">Email</p>
+                            <p id="userEmail" style="font-weight: 600; color: #2d3436;">Loading...</p>
+                        </div>
+                        <div>
+                            <p style="color: #636e72; font-size: 0.85rem; margin-bottom: 0.25rem;">Username</p>
+                            <p id="userUsername" style="font-weight: 600; color: #2d3436;">Loading...</p>
+                        </div>
+                        <div>
+                            <p style="color: #636e72; font-size: 0.85rem; margin-bottom: 0.25rem;">Full Name</p>
+                            <p id="userFullName" style="font-weight: 600; color: #2d3436;">Loading...</p>
+                        </div>
+                        <div>
+                            <p style="color: #636e72; font-size: 0.85rem; margin-bottom: 0.25rem;">Member Since</p>
+                            <p id="userMemberSince" style="font-weight: 600; color: #2d3436;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="goToProfile()" style="width: 100%;">Edit Profile</button>
+            </div>
+            <div class="settings-card">
+                <h3 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z" fill="#6b9080"/>
+                    </svg>
+                    Appearance
+                </h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Language</div>
+                        <div class="setting-description">Choose your preferred language</div>
+                    </div>
+                    <div class="select-wrapper">
+                        <select id="languageSelect" onchange="saveSettings()">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Settings -->
+            <div class="settings-card">
+                <h3 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="#6b9080"/>
+                    </svg>
+                    Notifications
+                </h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Email Notifications</div>
+                        <div class="setting-description">Receive analysis updates via email</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="emailNotifications" checked onchange="saveSettings()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Analysis Reminders</div>
+                        <div class="setting-description">Get reminded to update your financial data</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="analysisReminders" checked onchange="saveSettings()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Insights Notifications</div>
+                        <div class="setting-description">Be notified when new insights are available</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="insightsNotifications" checked onchange="saveSettings()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Privacy & Security -->
+            <div class="settings-card">
+                <h3 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" fill="#6b9080"/>
+                    </svg>
+                    Privacy & Security
+                </h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Two-Factor Authentication</div>
+                        <div class="setting-description">Add an extra layer of security to your account</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="setup2FA()">Enable</button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Data Sharing</div>
+                        <div class="setting-description">Allow anonymous usage data for improving the service</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="dataSharing" checked onchange="saveSettings()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Session Timeout</div>
+                        <div class="setting-description">Automatically log out after period of inactivity</div>
+                    </div>
+                    <div class="select-wrapper">
+                        <select id="sessionTimeout" onchange="saveSettings()">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="never">Never</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="settings-card">
+                <h3 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" fill="#6b9080"/>
+                    </svg>
+                    Data Management
+                </h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Export Data</div>
+                        <div class="setting-description">Download all your data in JSON format</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="exportData()">Export</button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Clear Cache</div>
+                        <div class="setting-description">Remove temporary data and free up space</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="clearCache()">Clear</button>
+                </div>
+                
+                <div class="danger-zone">
+                    <div class="danger-zone-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="#d63031"/>
+                        </svg>
+                        Danger Zone
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Delete All Data</div>
+                            <div class="setting-description">Permanently delete all your analysis data. This action cannot be undone.</div>
+                        </div>
+                        <button class="btn btn-danger" onclick="confirmDeleteData()">Delete Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Navigation.init();
+
+            // Check authentication
+            const isAuth = await AuthManager.isAuthenticated();
+            if (!isAuth) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Store email in localStorage for future reference
+            try {
+                const user = await AuthManager.getCurrentUser();
+                if (user && user.email) {
+                    localStorage.setItem('mindspend_email', user.email);
+                    console.log('📧 Email stored:', user.email);
+                }
+            } catch (e) {
+                console.log('Could not store email:', e);
+            }
+
+            // Load user profile info
+            await loadUserInfo();
+            
+            // Load settings
+            loadSettings();
+        });
+
+        async function loadUserInfo() {
+            try {
+                console.log('📝 Loading user info...');
+                
+                const user = await AuthManager.getCurrentUser();
+                const profile = await AuthManager.getCurrentProfile();
+                
+                console.log('👤 User:', user);
+                console.log('📋 Profile:', profile);
+                
+                // Set email
+                if (user && user.email) {
+                    document.getElementById('userEmail').textContent = user.email;
+                    console.log('✅ Email loaded:', user.email);
+                } else {
+                    // Fallback to localStorage
+                    const storedEmail = localStorage.getItem('mindspend_email') || 'Not available';
+                    document.getElementById('userEmail').textContent = storedEmail;
+                    console.log('📦 Email from storage:', storedEmail);
+                }
+                
+                // Set username
+                if (profile && profile.username) {
+                    document.getElementById('userUsername').textContent = profile.username;
+                    console.log('✅ Username loaded:', profile.username);
+                } else {
+                    // Fallback to localStorage
+                    const storedUsername = localStorage.getItem('mindspend_username') || 'Not set';
+                    document.getElementById('userUsername').textContent = storedUsername;
+                    console.log('📦 Username from storage:', storedUsername);
+                }
+                
+                // Set full name
+                let fullName = 'Not set';
+                if (profile) {
+                    if (profile.first_name && profile.last_name) {
+                        fullName = `${profile.first_name} ${profile.last_name}`;
+                    } else if (profile.first_name) {
+                        fullName = profile.first_name;
+                    }
+                }
+                
+                // Fallback to localStorage
+                if (fullName === 'Not set') {
+                    const storedFirstName = localStorage.getItem('mindspend_firstName');
+                    const storedLastName = localStorage.getItem('mindspend_lastName');
+                    if (storedFirstName && storedLastName) {
+                        fullName = `${storedFirstName} ${storedLastName}`;
+                    } else if (storedFirstName) {
+                        fullName = storedFirstName;
+                    }
+                }
+                
+                document.getElementById('userFullName').textContent = fullName;
+                console.log('✅ Full name loaded:', fullName);
+                
+                // Set member since date
+                if (user && user.created_at) {
+                    const memberDate = new Date(user.created_at);
+                    document.getElementById('userMemberSince').textContent = memberDate.toLocaleDateString();
+                    console.log('✅ Member since loaded:', memberDate.toLocaleDateString());
+                } else {
+                    // Fallback
+                    document.getElementById('userMemberSince').textContent = 'Unknown';
+                    console.log('⚠️  Member date not available');
+                }
+                
+                console.log('✅ All user info loaded successfully');
+            } catch (e) {
+                console.error('❌ Error loading user info:', e);
+                
+                // Set fallback values from localStorage
+                document.getElementById('userEmail').textContent = localStorage.getItem('mindspend_email') || 'Not available';
+                document.getElementById('userUsername').textContent = localStorage.getItem('mindspend_username') || 'Not set';
+                
+                const firstName = localStorage.getItem('mindspend_firstName') || '';
+                const lastName = localStorage.getItem('mindspend_lastName') || '';
+                document.getElementById('userFullName').textContent = (firstName + ' ' + lastName).trim() || 'Not set';
+                
+                document.getElementById('userMemberSince').textContent = 'Unknown';
+                
+                console.log('📦 Using fallback values from storage');
+            }
+        }
+
+        function goToProfile() {
+            window.location.href = 'profile.html';
+        }
+
+        function loadSettings() {
+            // Load from localStorage
+            const settings = JSON.parse(localStorage.getItem('mindspend_settings') || '{}');
+            
+            // Apply settings
+            if (settings.emailNotifications !== undefined) {
+                document.getElementById('emailNotifications').checked = settings.emailNotifications;
+            }
+            if (settings.analysisReminders !== undefined) {
+                document.getElementById('analysisReminders').checked = settings.analysisReminders;
+            }
+            if (settings.insightsNotifications !== undefined) {
+                document.getElementById('insightsNotifications').checked = settings.insightsNotifications;
+            }
+            if (settings.dataSharing !== undefined) {
+                document.getElementById('dataSharing').checked = settings.dataSharing;
+            }
+            if (settings.language) {
+                document.getElementById('languageSelect').value = settings.language;
+            }
+            if (settings.sessionTimeout) {
+                document.getElementById('sessionTimeout').value = settings.sessionTimeout;
+            }
+            
+            console.log('✅ Settings loaded');
+        }
+
+        function saveSettings() {
+            const settings = {
+                emailNotifications: document.getElementById('emailNotifications').checked,
+                analysisReminders: document.getElementById('analysisReminders').checked,
+                insightsNotifications: document.getElementById('insightsNotifications').checked,
+                dataSharing: document.getElementById('dataSharing').checked,
+                language: document.getElementById('languageSelect').value,
+                sessionTimeout: document.getElementById('sessionTimeout').value
+            };
+
+            localStorage.setItem('mindspend_settings', JSON.stringify(settings));
+            showMessage('✅ Settings saved successfully!', 'success');
+        }
+
+        function setup2FA() {
+            alert('Two-Factor Authentication setup is coming soon!\n\nThis feature will add an extra layer of security by requiring a second verification method when logging in.');
+        }
+
+        function exportData() {
+            try {
+                // Get all user data from storage
+                const analysisData = StorageManager.load() || {};
+                const settings = JSON.parse(localStorage.getItem('mindspend_settings') || '{}');
+                
+                const data = {
+                    exportDate: new Date().toISOString(),
+                    analysis: analysisData,
+                    settings: settings
+                };
+
+                // Create blob and download
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mindspend-data-export-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showMessage('✅ Data exported successfully!', 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                showMessage('❌ Failed to export data: ' + error.message, 'error');
+            }
+        }
+
+        function clearCache() {
+            if (confirm('Are you sure you want to clear the cache? This will remove temporary data but keep your analyses.')) {
+                // Clear specific cache items but preserve important data
+                const importantKeys = ['mindspend_unified_analysis', 'mindspend_settings', 'mindspend_token'];
+                const allKeys = Object.keys(localStorage);
+                
+                allKeys.forEach(key => {
+                    if (!importantKeys.some(important => key.includes(important))) {
+                        localStorage.removeItem(key);
+                    }
+                });
+
+                showMessage('Cache cleared successfully!', 'success');
+            }
+        }
+
+        function confirmDeleteData() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('active');
+        }
+
+        function confirmFinalDelete() {
+            closeDeleteModal();
+            deleteAllData();
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('deleteModal');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeDeleteModal();
+                }
+            });
+        });
+
+        function deleteAllData() {
+            try {
+                // Clear analysis data from StorageManager
+                StorageManager.clear();
+                
+                // Clear analysis-related localStorage items
+                localStorage.removeItem('mindspend_unified_analysis');
+                localStorage.removeItem('mindspend_analysis');
+                localStorage.removeItem('mindspend_transactions');
+
+                showMessage('✅ All analysis data has been permanently deleted', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            } catch (error) {
+                console.error('Delete error:', error);
+                showMessage('❌ Failed to delete data: ' + error.message, 'error');
+            }
+        }
+
+        function showMessage(text, type = 'success') {
+            const container = document.getElementById('messageContainer');
+            const message = document.createElement('div');
+            message.className = `message ${type} show`;
+            message.textContent = text;
+            
+            container.innerHTML = '';
+            container.appendChild(message);
+            
+            setTimeout(() => {
+                message.classList.remove('show');
+                setTimeout(() => message.remove(), 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

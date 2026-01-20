@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visual Analytics — MindSpend Labs</title>
+  
+  <!-- Sora Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- AOS for scroll animations -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+  
+  <!-- Chart.js for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- html2pdf for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- AOS animation library -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  
+  <!-- Supabase Library (optional - for authentication features) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  
+  <!-- Unified Storage Manager -->
+  <script src="utils/storage.js"></script>  
+  
+  <!-- Supabase Configuration (optional) -->
+  <script src="utils/supabase.js" defer></script>
+  
+  <!-- Authentication & Navigation -->
+  <script src="utils/auth.js" defer></script>
+  <script src="utils/api.js" defer></script>
+  <script src="utils/navigation.js" defer></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      color: #2d3436;
+      padding: 0;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    /* Animated scrolling background */
+    @-webkit-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @-moz-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @-o-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+
+    /* Animated pattern background container */
+    .bg-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC") repeat 0 0;
+      -webkit-animation: bg-scrolling-reverse 0.92s infinite linear;
+      -moz-animation: bg-scrolling-reverse 0.92s infinite linear;
+      -o-animation: bg-scrolling-reverse 0.92s infinite linear;
+      animation: bg-scrolling-reverse 0.92s infinite linear;
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 2rem 0;
+    }
+
+    header h1 {
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: #4d7464;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #636e72;
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e0ddd5;
+      border-radius: 20px;
+      padding: 1.25rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      border-color: #6b9080;
+    }
+
+    .card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      color: #6b9080;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+      margin: 0.75rem 0;
+      background: #f9f8f6;
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      max-height: 100%;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 3.5rem 2.5rem;
+      background: white;
+      border-radius: 24px;
+      border: 2px solid #e0ddd5;
+      margin: 2rem 0;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 2px 8px rgba(107, 144, 128, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .no-data:hover {
+      border-color: rgba(107, 144, 128, 0.3);
+      box-shadow: 0 4px 16px rgba(107, 144, 128, 0.12);
+    }
+
+    .no-data h2 {
+      color: #4d7464;
+      margin-bottom: 1rem;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .no-data p {
+      color: #b2bec3;
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .no-data button {
+      padding: 14px 32px;
+      background: #6b9080;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    .no-data button:hover {
+      background: #5a7d6f;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(107, 144, 128, 0.3);
+    }
+
+    /* Summary Cards */
+    #summary-cards {
+      background: transparent;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(107, 144, 128, 0.2);
+      border-radius: 10px;
+      padding: 0.4rem 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 16px rgba(107, 144, 128, 0.08);
+      display: flex;
+      flex-direction: row;
+      gap: 1.25rem;
+      justify-content: space-between;
+      animation: fadeIn 0.6s ease-out;
+      max-height: 55px;
+      align-items: center;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: transparent;
+      border: none;
+      transition: all 0.3s ease;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .stat-card:hover {
+      border-color: #6b9080;
+      background: rgba(107, 144, 128, 0.1);
+      transform: translateY(-2px);
+      box-shadow: none;
+    }
+
+    /* Scrollable Charts Container */
+    #charts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      scroll-behavior: smooth;
+    }
+
+    /* Safe defaults so cards stay visible even if AOS fails to load */
+    [data-aos] {
+      opacity: 1;
+      transform: none;
+    }
+    body.aos-enabled [data-aos] {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 600ms ease-out, transform 600ms ease-out;
+    }
+    body.aos-enabled [data-aos].aos-animate {
+      opacity: 1;
+      transform: none;
+    }
+    /* Ensure elements stay visible even if not yet animated by AOS */
+    [data-aos]:not(.aos-animate) {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+      .nav-buttons {
+        flex-direction: column;
+      }
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      .chart-container {
+        height: 280px;
+      }
+      #summary-cards {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <!-- Animated Background -->
+  <div class="bg-container"></div>
+  
+  <div class="content-wrapper">
+    <!-- Summary Cards -->
+    <div id="summary-cards" data-aos="fade-up" data-aos-duration="700"></div>
+
+    <header>
+      <h1>Visual Analytics</h1>
+      <p>Interactive Spending Visualizations</p>
+    </header>
+
+    <div id="charts-container"></div>
+  </div>
+
+  <script>
+    let chartsMap = {};
+
+    function forceAOSVisible() {
+      if (!window.AOS) return;
+      // Immediately make all AOS elements visible
+      // AOS will handle scroll-in animations for elements below viewport
+      document.querySelectorAll('[data-aos]').forEach(el => {
+        el.classList.add('aos-animate');
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Initialize Navigation
+      if (typeof Navigation !== 'undefined') {
+        await Navigation.init();
+      }
+      
+      if (window.AOS) {
+        AOS.init({
+          duration: 700,
+          easing: 'ease-out-cubic',
+          once: true,
+          offset: 50,
+          disable: function() { return window.innerWidth < 768; }
+        });
+        document.body.classList.add('aos-enabled');
+      }
+
+      loadAndRenderCharts();
+      
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        setTimeout(function() {
+          Object.values(chartsMap).forEach(chart => {
+            if (chart) chart.resize();
+          });
+          if (window.AOS) {
+            AOS.refresh();
+            forceAOSVisible();
+          }
+        }, 250);
+      });
+    });
+
+    function loadAndRenderCharts() {
+      console.log('Loading charts...');
+      const data = StorageManager.load();
+      console.log('Data loaded:', data);
+      
+      if (!data || !data.transactions || data.transactions.length === 0) {
+        console.warn('No transaction data found');
+        document.getElementById('charts-container').innerHTML = `
+          <div class="no-data" data-aos="fade-up" data-aos-duration="700">
+            <h2>No Analysis Data Found</h2>
+            <p>Please upload and analyze your bank statement first.</p>
+            <button onclick="window.location.href='index.html'">← Go to Upload</button>
+          </div>
+        `;
+        if (window.AOS) {
+          AOS.refresh();
+          forceAOSVisible();
+        }
+        return;
+      }
+
+      console.log('Found', data.transactions.length, 'transactions');
+      renderCharts(data);
+    }
+
+    function renderCharts(data) {
+      const transactions = data.transactions || [];
+      const patterns = data.patterns || [];
+
+      if (transactions.length === 0) {
+        document.getElementById('charts-container').innerHTML = `
+          <div class="no-data" data-aos="fade-up" data-aos-duration="700">
+            <h2>No Data Available</h2>
+            <p>No transactions found in your data.</p>
+            <button onclick="window.location.href='index.html'">Upload Data</button>
+          </div>
+        `;
+        if (window.AOS) {
+          AOS.refresh();
+          forceAOSVisible();
+        }
+        return;
+      }
+
+      // Render Summary Cards
+      renderSummaryCards(transactions);
+
+      let html = '<div class="charts-grid">';
+
+      // Chart 1: Monthly Spending Trend
+      html += `
+        <div class="card chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="0">
+          <h3>Monthly Spending Trend</h3>
+          <div class="chart-container">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Chart 2: Category Breakdown
+      html += `
+        <div class="card chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
+          <h3>Category Breakdown</h3>
+          <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Chart 3: Weekly Pattern
+      html += `
+        <div class="card chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
+          <h3>Weekly Spending Pattern</h3>
+          <div class="chart-container">
+            <canvas id="weeklyChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Chart 4: Income vs Expenses
+      html += `
+        <div class="card chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
+          <h3>Income vs Expenses</h3>
+          <div class="chart-container">
+            <canvas id="incomeExpenseChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Chart 5: Top 10 Transactions
+      html += `
+        <div class="card chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="400">
+          <h3>Top 10 Expenses</h3>
+          <div class="chart-container">
+            <canvas id="topTransactionsChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Chart 6: Daily Spending
+      html += `
+        <div class="card chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="500">
+          <h3>Daily Spending Trend</h3>
+          <div class="chart-container">
+            <canvas id="dailyChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      html += '</div>';
+      
+      document.getElementById('charts-container').innerHTML = html;
+      if (window.AOS) {
+        AOS.refresh();
+        forceAOSVisible();
+      }
+
+      // Render all charts
+      renderMonthlyChart(transactions);
+      renderCategoryChart(transactions);
+      renderWeeklyChart(transactions);
+      renderIncomeExpenseChart(transactions);
+      renderTopTransactionsChart(transactions);
+      renderDailyChart(transactions);
+    }
+
+    function renderSummaryCards(transactions) {
+      const stats = calculateStats(transactions);
+      const cards = `
+        <div class="stat-card">
+          <div style="font-size: 0.95rem; font-weight: 700; color: #d63031;">₹${stats.totalExpenses.toLocaleString()}</div>
+          <div style="color: #636e72; font-size: 0.65rem; margin-top: 0.1rem; font-weight: 500;">Total Expenses</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.95rem; font-weight: 700; color: #00b894;">₹${stats.totalIncome.toLocaleString()}</div>
+          <div style="color: #636e72; font-size: 0.65rem; margin-top: 0.1rem; font-weight: 500;">Total Income</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.95rem; font-weight: 700; color: ${stats.savingsRate >= 20 ? '#00b894' : '#fdcb6e'};">${stats.savingsRate}%</div>
+          <div style="color: #636e72; font-size: 0.65rem; margin-top: 0.1rem; font-weight: 500;">Savings Rate</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.95rem; font-weight: 700; color: #6b9080;">₹${stats.avgDaily.toLocaleString()}</div>
+          <div style="color: #636e72; font-size: 0.65rem; margin-top: 0.1rem; font-weight: 500;">Avg Daily Spend</div>
+        </div>
+      `;
+      document.getElementById('summary-cards').innerHTML = cards;
+      if (window.AOS) {
+        AOS.refresh();
+        forceAOSVisible();
+      }
+    }
+
+    function calculateStats(transactions) {
+      let totalExpenses = 0;
+      let totalIncome = 0;
+      
+      transactions.forEach(t => {
+        const amount = Math.abs(parseFloat(t.Amount || t.amount || 0));
+        const type = (t.Type || t.type || '').toLowerCase();
+        
+        if (type === 'credit') {
+          totalIncome += Math.abs(amount);
+        } else {
+          totalExpenses += amount;
+        }
+      });
+
+      const savings = totalIncome - totalExpenses;
+      const savingsRate = totalIncome > 0 ? Math.round((savings / totalIncome) * 100) : 0;
+      const avgDaily = Math.round(totalExpenses / 30);
+
+      return { totalExpenses, totalIncome, savingsRate, avgDaily };
+    }
+
+    function renderMonthlyChart(transactions) {
+      const monthlyData = {};
+      
+      transactions.forEach(t => {
+        const dateStr = t.Date || t.date || new Date().toISOString().split('T')[0];
+        const monthKey = dateStr.substring(0, 7);
+        const amount = Math.abs(parseFloat(t.Amount || t.amount || 0));
+        const type = (t.Type || t.type || '').toLowerCase();
+        
+        if (type !== 'credit') {
+          monthlyData[monthKey] = (monthlyData[monthKey] || 0) + amount;
+        }
+      });
+
+      const months = Object.keys(monthlyData).sort();
+      const amounts = months.map(m => monthlyData[m]);
+
+      const ctx = document.getElementById('monthlyChart');
+      if (chartsMap.monthly) chartsMap.monthly.destroy();
+      
+      chartsMap.monthly = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months.map(m => new Date(m + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+          datasets: [{
+            label: 'Monthly Spending (₹)',
+            data: amounts,
+            backgroundColor: '#6b9080',
+            borderColor: '#5a7d6f',
+            borderWidth: 2,
+            borderRadius: 8,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#2d3436', font: { size: 12 } } },
+            tooltip: { callbacks: { label: (context) => '₹' + context.parsed.y.toLocaleString() } }
+          },
+          scales: {
+            x: { ticks: { color: '#636e72' }, grid: { color: 'rgba(99, 110, 114, 0.1)' } },
+            y: { ticks: { color: '#636e72' }, grid: { color: 'rgba(99, 110, 114, 0.1)' } }
+          }
+        }
+      });
+    }
+
+    function renderWeeklyChart(transactions) {
+      const weeklyData = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      transactions.forEach(t => {
+        const dateStr = t.Date || t.date || new Date().toISOString().split('T')[0];
+        const day = new Date(dateStr).getDay();
+        const amount = Math.abs(parseFloat(t.Amount || t.amount || 0));
+        const type = (t.Type || t.type || '').toLowerCase();
+        
+        if (type !== 'credit') {
+          weeklyData[dayNames[day]] += amount;
+        }
+      });
+
+      const ctx = document.getElementById('weeklyChart');
+      if (chartsMap.weekly) chartsMap.weekly.destroy();
+      
+      chartsMap.weekly = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dayNames,
+          datasets: [{
+            label: 'Spending by Day (₹)',
+            data: dayNames.map(d => weeklyData[d]),
+            backgroundColor: '#6b9080',
+            borderColor: '#5a7d6f',
+            borderWidth: 2,
+            borderRadius: 8,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#2d3436', font: { size: 12 } } },
+            tooltip: { callbacks: { label: (context) => '₹' + context.parsed.y.toLocaleString() } }
+          },
+          scales: {
+            x: { ticks: { color: '#636e72' }, grid: { color: 'rgba(99, 110, 114, 0.1)' } },
+            y: { ticks: { color: '#636e72' }, grid: { color: 'rgba(99, 110, 114, 0.1)' } }
+          }
+        }
+      });
+    }
+
+    function renderIncomeExpenseChart(transactions) {
+      let income = 0, expenses = 0;
+      
+      transactions.forEach(t => {
+        const amount = Math.abs(parseFloat(t.Amount || t.amount || 0));
+        const type = (t.Type || t.type || '').toLowerCase();
+        
+        if (type === 'credit') {
+          income += amount;
+        } else {
+          expenses += amount;
+        }
+      });
+
+      const ctx = document.getElementById('incomeExpenseChart');
+      if (chartsMap.incomeExpense) chartsMap.incomeExpense.destroy();
+      
+      chartsMap.incomeExpense = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Income', 'Expenses', 'Savings'],
+          datasets: [{
+            data: [income, expenses, income - expenses],
+            backgroundColor: ['#00b894', '#d63031', '#6b9080'],
+            borderRadius: 8,
+            borderWidth: 2,
+            borderColor: ['#00916d', '#c0392b', '#5a7d6f'],
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (context) => '₹' + context.parsed.y.toLocaleString() } }
+          },
+          scales: {
+            y: { ticks: { color: '#636e72' }, grid: { color: 'rgba(99, 110, 114, 0.1)' } }
+          }
+        }
+      });
+    }
+
+    function renderTopTransactionsChart(transactions) {
+      const expenses = transactions
+        .filter(t => (t.Type || t.type || '').toLowerCase() !== 'credit')
+        .map(t => ({
+          desc: (t.Description || t.description || 'Unknown').substring(0, 20),
+          amount: Math.abs(parseFloat(t.Amount || t.amount || 0))
+        }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 10);
+
+      const ctx = document.getElementById('topTransactionsChart');
+      if (chartsMap.topTrans) chartsMap.topTrans.destroy();
+      
+      chartsMap.topTrans = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: expenses.map(e => e.desc),
+          datasets: [{
+            label: 'Amount (₹)',
+            data: expenses.map(e => e.amount),
+            backgroundColor: '#6b9080',
+            borderColor: '#5a7d6f',
+            borderWidth: 2,
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#2d3436', font: { size: 12 } } },
+            tooltip: { callbacks: { label: (context) => '₹' + context.parsed.x.toLocaleString() } }
+          },
+          scales: {
+            x: { ticks: { color: '#636e72' }, grid: { color: 'rgba(99, 110, 114, 0.1)' } },
+            y: { ticks: { color: '#636e72', font: { size: 10 } }, grid: { color: 'rgba(99, 110, 114, 0.1)' } }
+          }
+        }
+      });
+    }
+
+    function renderDailyChart(transactions) {
+      const dailyData = {};
+      
+      transactions.forEach(t => {
+        const dateStr = t.Date || t.date || new Date().toISOString().split('T')[0];
+        const amount = Math.abs(parseFloat(t.Amount || t.amount || 0));
+        const type = (t.Type || t.type || '').toLowerCase();
+        
+        if (type !== 'credit') {
+          dailyData[dateStr] = (dailyData[dateStr] || 0) + amount;
+        }
+      });
+
+      const sortedDates = Object.keys(dailyData).sort().slice(-30);
+      const amounts = sortedDates.map(d => dailyData[d]);
+
+      const ctx = document.getElementById('dailyChart');
+      if (chartsMap.daily) chartsMap.daily.destroy();
+      
+      chartsMap.daily = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sortedDates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+          datasets: [{
+            label: 'Daily Spending (₹)',
+            data: amounts,
+            borderColor: '#6b9080',
+            backgroundColor: 'rgba(107, 144, 128, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#6b9080',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#2d3436', font: { size: 12 } } },
+            tooltip: { callbacks: { label: (context) => '₹' + context.parsed.y.toLocaleString() } }
+          },
+          scales: {
+            x: { ticks: { color: '#636e72' }, grid: { color: 'rgba(99, 110, 114, 0.1)' } },
+            y: { ticks: { color: '#636e72' }, grid: { color: 'rgba(99, 110, 114, 0.1)' } }
+          }
+        }
+      });
+    }
+
+    function renderCategoryChart(transactions) {
+      const catData = {};
+      
+      transactions.forEach(t => {
+        const cat = t.Category || t.category || t.base_category || 'Other';
+        const amount = Math.abs(parseFloat(t.Amount || t.amount || 0));
+        const type = (t.Type || t.type || '').toLowerCase();
+        
+        if (type !== 'credit') {
+          catData[cat] = (catData[cat] || 0) + amount;
+        }
+      });
+
+      const categories = Object.keys(catData).length > 0 ? Object.keys(catData) : ['Uncategorized'];
+      const colors = ['#6b9080', '#5a7d6f', '#4d7464', '#7ba399', '#5a8472', '#6b9080', '#5a7d6f', '#4d7464'];
+      const categoryAmounts = categories.map(cat => catData[cat] || 0);
+
+      const ctx = document.getElementById('categoryChart');
+      if (chartsMap.category) chartsMap.category.destroy();
+      
+      chartsMap.category = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: categories,
+          datasets: [{
+            data: categoryAmounts,
+            backgroundColor: colors.slice(0, categories.length),
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            hoverOffset: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: '#2d3436',
+                font: { size: 12 },
+                padding: 15,
+              },
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((context.parsed / total) * 100).toFixed(1);
+                  return '₹' + context.parsed.toLocaleString() + ' (' + percentage + '%)';
+                }
+              }
+            }
+          },
+        },
+      });
+    }
+
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #f5f3ef 0%, #e8e4dd 100%);
+  min-height: 100vh;
+  color: #2d3436;
+  padding: 2rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 1rem;
+  }
+  header h1 {
+    font-size: 2rem;
+  }
+  .button-group {
+    flex-direction: column;
+  }
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

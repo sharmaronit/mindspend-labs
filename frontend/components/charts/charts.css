@@ -1,0 +1,22 @@
+/* Charts Styling */
+.chart-container {
+  position: relative;
+  height: 320px;
+  margin: 1.25rem 0;
+  background: #f9f8f6;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.charts-section {
+  margin-top: 2rem;
+}
+
+.charts-section h2 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  font-weight: 700;
+  color: #6b9080;
+  letter-spacing: -0.03em;
+}

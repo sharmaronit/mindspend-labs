@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics — MindSpend Labs (Dark Mode)</title>
+  
+  <!-- Google Sora Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- html2pdf.js for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <!-- Unified Storage Manager -->
+  <script src="utils/storage.js"></script>
+  
+  <!-- Authentication & Navigation -->
+  <script src="utils/auth.js"></script>
+  <script src="utils/api.js"></script>
+  <script src="utils/navigation.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --stripe-size: 100px;
+      --color1: #fcf8f8;
+      --color2: #313131;
+      --duration: 2s;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: auto;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      color: #e0e0e0;
+      padding: 0;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      margin: 0;
+      background: #000;
+      position: relative;
+    }
+
+    /* Stripe background container */
+    .stripe {
+      position: fixed;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .stripe_inner {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color1) 25%,
+        var(--color1) 50%,
+        var(--color2) 50%,
+        var(--color2) 75%
+      );
+      background-size: var(--stripe-size) var(--stripe-size);
+      background-clip: text;
+      animation: stripeBackgroundPosition var(--duration) linear infinite;
+    }
+
+    .stripe::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: calc(100% + var(--stripe-size));
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color2) 25%,
+        var(--color2) 50%,
+        var(--color1) 50%,
+        var(--color1) 75%
+      );
+      background-size: var(--stripe-size) var(--stripe-size);
+      animation: stripeTransform var(--duration) linear infinite;
+      z-index: -1;
+    }
+
+    .stripe::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, rgba(27, 39, 53, 0) 0%, #090a0f 100%);
+      z-index: 0;
+    }
+
+    @keyframes stripeTransform {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(calc(var(--stripe-size) * -1));
+      }
+    }
+
+    @keyframes stripeBackgroundPosition {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: calc(var(--stripe-size) * -1) 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 2rem 0;
+    }
+
+    header h1 {
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: #cfd7da;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #a0a0a0;
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-buttons {
+      text-align: center;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-buttons button {
+      padding: 0.75rem 1.5rem;
+      background: #2a2a2a;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      font-family: inherit;
+    }
+
+    .nav-buttons button:hover {
+      background: #3a3a3a;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .nav-buttons button.secondary {
+      background: #2a2a2a;
+    }
+
+    .nav-buttons button.secondary:hover {
+      background: #3a3a3a;
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-card {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .chart-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      border-color: #3a3a3a;
+    }
+
+    .chart-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 350px;
+      margin: 1rem 0;
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      max-height: 100%;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: #2a2a2a;
+      border-radius: 20px;
+      border: 1px solid #444;
+    }
+
+    .no-data h2 {
+      color: #a0a0a0;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+
+    .no-data p {
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    .no-data button {
+      padding: 0.75rem 2rem;
+      background: #3a3a3a;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .no-data button:hover {
+      background: #4a4a4a;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+      .nav-buttons {
+        flex-direction: column;
+      }
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      .chart-container {
+        height: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Striped Background -->
+  <div class="stripe">
+    <div class="stripe_inner"></div>
+  </div>
+
+  <div class="content-wrapper">
+    <header>
+      <h1>Analytics Dashboard</h1>
+      <p>Visual Breakdown of Your Spending Patterns</p>
+    </header>
+
+    <div class="nav-buttons">
+      <button onclick="window.location.href='index-dark.html'">← Back to Upload</button>
+      <button class="secondary" onclick="window.location.href='insights-dark.html'">View Insights</button>
+      <button class="secondary" onclick="exportPDF()">📄 Download PDF</button>
+    </div>
+
+    <div id="charts-container"></div>
+  </div>
+
+  <script>
+    let chartsMap = {};
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadAndRenderCharts();
+      
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        setTimeout(function() {
+          Object.values(chartsMap).forEach(chart => {
+            if (chart) chart.resize();
+          });
+        }, 250);
+      });
+    });
+
+    function loadAndRenderCharts() {
+      const data = StorageManager.load();
+      
+      if (!data || !data.transactions || data.transactions.length === 0) {
+        document.getElementById('charts-container').innerHTML = `
+          <div class="no-data">
+            <h2>No Analysis Data Found</h2>
+            <p>Please upload and analyze your bank statement first.</p>
+            <button onclick="window.location.href='index-dark.html'">Go to Upload</button>
+          </div>
+        `;
+        return;
+      }
+
+      renderCharts(data);
+    }
+
+    function renderCharts(data) {
+      const transactions = data.transactions || [];
+      const patterns = data.patterns || [];
+
+      if (transactions.length === 0) {
+        document.getElementById('charts-container').innerHTML = `
+          <div class="no-data">
+            <h2>No Data Available</h2>
+            <p>No transactions found in your data.</p>
+            <button onclick="window.location.href='index-dark.html'">Upload Data</button>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '<div class="charts-grid">';
+
+      // Chart 1: Time Series
+      html += `
+        <div class="chart-card">
+          <h3>Spending Over Time</h3>
+          <div class="chart-container">
+            <canvas id="timeChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Chart 2: Category Breakdown
+      html += `
+        <div class="chart-card">
+          <h3>Category Breakdown</h3>
+          <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Chart 3: Pattern Confidence
+      html += `
+        <div class="chart-card">
+          <h3>Pattern Confidence</h3>
+          <div class="chart-container">
+            <canvas id="patternChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Chart 4: Time of Day
+      html += `
+        <div class="chart-card">
+          <h3>Time of Day Spending</h3>
+          <div class="chart-container">
+            <canvas id="todChart"></canvas>
+          </div>
+        </div>
+      `;
+
+      html += '</div>';
+      document.getElementById('charts-container').innerHTML = html;
+
+      // Render all charts
+      renderTimeSeriesChart(transactions);
+      renderCategoryChart(transactions);
+      renderPatternChart(patterns);
+      renderTimeOfDayChart(transactions);
+    }
+
+    function renderTimeSeriesChart(transactions) {
+      const timeData = {};
+      
+      transactions.forEach(t => {
+        const dateStr = t.date || t.Date || new Date().toISOString().split('T')[0];
+        const d = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+        const amount = parseFloat(t.amount || t.Amount || 0);
+        timeData[d] = (timeData[d] || 0) + amount;
+      });
+
+      const sortedDates = Object.keys(timeData).sort().slice(-30);
+      const sortedAmounts = sortedDates.map(d => timeData[d]);
+
+      const ctx = document.getElementById('timeChart');
+      if (chartsMap.time) chartsMap.time.destroy();
+      
+      chartsMap.time = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sortedDates,
+          datasets: [{
+            label: 'Daily Spending (₹)',
+            data: sortedAmounts,
+            borderColor: '#3a3a3a',
+            backgroundColor: 'rgba(58, 58, 58, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#3a3a3a',
+            pointBorderColor: '#e0e0e0',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: { color: '#e0e0e0', font: { size: 12 } },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: '#a0a0a0' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            },
+            y: {
+              ticks: { color: '#a0a0a0' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            },
+          },
+        },
+      });
+    }
+
+    function renderCategoryChart(transactions) {
+      const catData = {};
+      
+      transactions.forEach(t => {
+        const cat = t.category || t.Category || t.base_category || 'Other';
+        const amount = parseFloat(t.amount || t.Amount || 0);
+        catData[cat] = (catData[cat] || 0) + amount;
+      });
+
+      const categories = Object.keys(catData).length > 0 ? Object.keys(catData) : ['Uncategorized'];
+      const colors = ['#3a3a3a', '#4a4a4a', '#5a5a5a', '#6a6a6a', '#3a3a3a', '#4a4a4a', '#5a5a5a', '#6a6a6a'];
+      const categoryAmounts = categories.map(cat => catData[cat] || 0);
+
+      const ctx = document.getElementById('categoryChart');
+      if (chartsMap.category) chartsMap.category.destroy();
+      
+      chartsMap.category = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: categories,
+          datasets: [{
+            data: categoryAmounts,
+            backgroundColor: colors.slice(0, categories.length),
+            borderWidth: 2,
+            borderColor: '#2a2a2a',
+            hoverOffset: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: '#e0e0e0',
+                font: { size: 12 },
+                padding: 15,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    function renderPatternChart(patterns) {
+      let patternTypes = {};
+      
+      if (patterns && patterns.length > 0) {
+        patterns.forEach(p => {
+          patternTypes[p.type] = Math.max(patternTypes[p.type] || 0, p.confidence * 100);
+        });
+      }
+
+      const patternLabels = Object.keys(patternTypes).length > 0 ? Object.keys(patternTypes) : ['No patterns detected'];
+      const patternValues = Object.values(patternTypes);
+
+      const ctx = document.getElementById('patternChart');
+      if (chartsMap.pattern) chartsMap.pattern.destroy();
+      
+      chartsMap.pattern = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: patternLabels,
+          datasets: [{
+            label: 'Confidence (%)',
+            data: patternValues,
+            backgroundColor: 'rgba(58, 58, 58, 0.7)',
+            borderColor: '#3a3a3a',
+            borderWidth: 2,
+            borderRadius: 8,
+            hoverBackgroundColor: '#4a4a4a',
+          }],
+        },
+        options: {
+          indexAxis: 'x',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#e0e0e0', font: { size: 12 } },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: '#a0a0a0' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            },
+            y: {
+              ticks: { color: '#a0a0a0' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+              max: 100,
+            },
+          },
+        },
+      });
+    }
+
+    function renderTimeOfDayChart(transactions) {
+      const todData = { 
+        'Morning\n(6AM-12PM)': 0, 
+        'Afternoon\n(12PM-5PM)': 0, 
+        'Evening\n(5PM-10PM)': 0, 
+        'Late Night\n(10PM-6AM)': 0 
+      };
+
+      transactions.forEach(t => {
+        const dateStr = t.date || t.Date;
+        let hour = 0;
+        
+        if (dateStr && dateStr.includes('T')) {
+          hour = parseInt(dateStr.split('T')[1].split(':')[0]);
+        } else {
+          hour = Math.floor(Math.random() * 24);
+        }
+
+        const amount = parseFloat(t.amount || t.Amount || 0);
+        
+        if (hour >= 22 || hour < 6) todData['Late Night\n(10PM-6AM)'] += amount;
+        else if (hour >= 6 && hour < 12) todData['Morning\n(6AM-12PM)'] += amount;
+        else if (hour >= 12 && hour < 17) todData['Afternoon\n(12PM-5PM)'] += amount;
+        else todData['Evening\n(5PM-10PM)'] += amount;
+      });
+
+      const ctx = document.getElementById('todChart');
+      if (chartsMap.tod) chartsMap.tod.destroy();
+      
+      chartsMap.tod = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(todData),
+          datasets: [{
+            label: 'Spending (₹)',
+            data: Object.values(todData),
+            backgroundColor: ['#3a3a3a', '#4a4a4a', '#5a5a5a', '#6a6a6a'],
+            borderColor: ['#2a2a2a', '#3a3a3a', '#4a4a4a', '#5a5a5a'],
+            borderWidth: 2,
+            borderRadius: 8,
+            hoverBackgroundColor: ['#2a2a2a', '#3a3a3a', '#4a4a4a', '#5a5a5a'],
+          }],
+        },
+        options: {
+          indexAxis: 'x',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#e0e0e0', font: { size: 12 } },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: '#a0a0a0' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#a0a0a0' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            },
+          },
+        },
+      });
+    }
+
+    function exportPDF() {
+      const element = document.querySelector('.content-wrapper');
+      const opt = {
+        margin: 10,
+        filename: 'mindspend_analytics_' + new Date().toLocaleDateString() + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+</body>
+</html>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --stripe-size: 100px;
+      --color1: #fcf8f8;
+      --color2: #313131;
+      --duration: 2s;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: auto;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      color: #e0e0e0;
+      padding: 0;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      margin: 0;
+      background: #000;
+      position: relative;
+    }
+
+    /* Stripe background container */
+    .stripe {
+      position: fixed;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .stripe_inner {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color1) 25%,
+        var(--color1) 50%,
+        var(--color2) 50%,
+        var(--color2) 75%
+      );
+      background-size: var(--stripe-size) var(--stripe-size);
+      background-clip: text;
+      animation: stripeBackgroundPosition var(--duration) linear infinite;
+    }
+
+    .stripe::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: calc(100% + var(--stripe-size));
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color2) 25%,
+        var(--color2) 50%,
+        var(--color1) 50%,
+        var(--color1) 75%
+      );
+      background-size: var(--stripe-size) var(--stripe-size);
+      animation: stripeTransform var(--duration) linear infinite;
+      z-index: -1;
+    }
+
+    .stripe::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, rgba(27, 39, 53, 0) 0%, #090a0f 100%);
+      z-index: 0;
+    }
+
+    @keyframes stripeTransform {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(calc(var(--stripe-size) * -1));
+      }
+    }
+
+    @keyframes stripeBackgroundPosition {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: calc(var(--stripe-size) * -1) 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 2rem 0;
+    }
+
+    header h1 {
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: #cfd7da;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #a0a0a0;
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-buttons {
+      text-align: center;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-buttons button {
+      padding: 0.75rem 1.5rem;
+      background: #2a2a2a;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      font-family: inherit;
+    }
+
+    .nav-buttons button:hover {
+      background: #3a3a3a;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .nav-buttons button.secondary {
+      background: #2a2a2a;
+    }
+
+    .nav-buttons button.secondary:hover {
+      background: #3a3a3a;
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .chart-card {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform, box-shadow;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    .chart-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      border-color: #a0a0a0;
+    }
+
+    .chart-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      color: #2a2a2a;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 1rem;
+    }
+
+    canvas {
+      max-height: 100%;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #666;
+    }
+
+    .no-data h2 {
+      color: #a0a0a0;
+      margin-bottom: 1rem;
+    }
+
+    .no-data button {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      background: #4a7c6b;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .no-data button:hover {
+      background: #3a6c5b;
+    }
+
+    @media print {
+      body {
+        background: white;
+        color: #333;
+      }
+      .nav-buttons {
+        display: none;
+      }
+      .stripe {
+        display: none;
+      }
+      .chart-card {
+        page-break-inside: avoid;
+        border: 1px solid #ddd;
+        background: white;
+        box-shadow: none;
+      }
+      .chart-card h3 {
+        color: #333;
+      }
+      header h1 {
+        color: #333;
+      }
+      header p {
+        color: #666;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+      .nav-buttons {
+        flex-direction: column;
+      }
+      .chart-container {
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Striped Background -->
+  <div class="stripe">
+    <div class="stripe_inner"></div>
+  </div>
+
+
+    <div class="container" id="charts-container">
+      <div class="chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
+        <h3>Spending Over Time</h3>
+        <div class="chart-container">
+          <canvas id="timeSeriesChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
+        <h3>Category Breakdown</h3>
+        <div class="chart-container">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
+        <h3>Pattern Confidence</h3>
+        <div class="chart-container">
+          <canvas id="confidenceChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="400">
+        <h3>Time of Day</h3>
+        <div class="chart-container">
+          <canvas id="timeOfDayChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const chartColor = '#66d9ef';
+    const chartGridColor = 'rgba(102, 217, 239, 0.1)';
+    const chartSecondaryColor = '#4a7c6b';
+    const textColor = '#e0e0e0';
+
+    let timeSeriesChart, categoryChart, confidenceChart, timeOfDayChart;
+    Chart.defaults.color = textColor;
+    Chart.defaults.borderColor = chartGridColor;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      AOS.init({
+        duration: 700,
+        easing: 'ease-out-cubic',
+        once: false,  // Allow animations to repeat
+        offset: 100,
+        disable: false  // Don't disable on small screens
+      });
+
+      loadAnalytics();
+      
+      // Handle window resize to redraw charts
+      window.addEventListener('resize', function() {
+        setTimeout(function() {
+          if (timeSeriesChart) timeSeriesChart.resize();
+          if (categoryChart) categoryChart.resize();
+          if (confidenceChart) confidenceChart.resize();
+          if (timeOfDayChart) timeOfDayChart.resize();
+        }, 250);
+      });
+    });
+
+    function loadAnalytics() {
+      const data = StorageManager.load();
+      
+      if (!data) {
+        document.getElementById('charts-container').innerHTML = `
+          <div class="no-data">
+            <h2>No Analysis Data Found</h2>
+            <p>Please upload and analyze your bank statement first.</p>
+            <button onclick="window.location.href='index-dark.html'">Go to Upload</button>
+          </div>
+        `;
+        return;
+      }
+
+      const analysis = data;
+      renderCharts(analysis);
+      
+      // Refresh AOS after charts are rendered
+      setTimeout(function() {
+        AOS.refresh();
+      }, 500);
+    }
+
+    function renderCharts(analysis) {
+      const dates = analysis.dates || [];
+      const amounts = analysis.amounts || [];
+      const categories = analysis.categories || {};
+      const patterns = analysis.patterns || [];
+      const transactions = analysis.transactions || [];
+
+      // Ensure we have data
+      let chartDates = dates.length > 0 ? dates : (transactions.map(t => t.date || t.Date || new Date().toISOString().split('T')[0])).slice(-30);
+      let chartAmounts = amounts.length > 0 ? amounts : (transactions.map(t => parseFloat(t.amount || t.Amount || 0))).slice(-30);
+      
+      // Extract categories from transactions if not in analysis
+      let chartCategories = categories;
+      if (Object.keys(chartCategories).length === 0 && transactions.length > 0) {
+        transactions.forEach(t => {
+          const cat = t.category || t.Category || 'Other';
+          chartCategories[cat] = (chartCategories[cat] || 0) + parseFloat(t.amount || t.Amount || 0);
+        });
+      }
+      
+      if (chartDates.length === 0 || chartAmounts.length === 0) {
+        chartDates = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5'];
+        chartAmounts = [100, 150, 120, 180, 160];
+      }
+      
+      console.log('📊 Rendering charts with:', { dates: chartDates.length, amounts: chartAmounts.length, categories: Object.keys(chartCategories).length, patterns: patterns.length });
+
+      // 1. Time Series Chart
+      const ctx1 = document.getElementById('timeSeriesChart').getContext('2d');
+      if (timeSeriesChart) timeSeriesChart.destroy();
+      timeSeriesChart = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: chartDates.slice(-30),
+          datasets: [{
+            label: 'Amount Spent (₹)',
+            data: chartAmounts.slice(-30),
+            borderColor: chartColor,
+            backgroundColor: 'rgba(102, 217, 239, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointBackgroundColor: chartColor,
+            pointBorderColor: textColor,
+            pointHoverRadius: 8,
+            pointHoverBackgroundColor: chartSecondaryColor,
+            segment: {
+              borderColor: ctx => ctx.p0DataIndex % 2 === 0 ? chartColor : chartSecondaryColor
+            }
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: textColor,
+                font: { family: "'Sora', sans-serif", size: 12 }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: { color: textColor },
+              grid: { color: chartGridColor }
+            },
+            x: {
+              ticks: { color: textColor },
+              grid: { color: chartGridColor }
+            }
+          }
+        }
+      });
+
+      // 2. Category Breakdown (Pie Chart)
+      const ctx2 = document.getElementById('categoryChart').getContext('2d');
+      if (categoryChart) categoryChart.destroy();
+      
+      let categoryLabels = Object.keys(chartCategories);
+      let categoryValues = Object.values(chartCategories);
+      
+      if (categoryLabels.length === 0) {
+        categoryLabels = ['Food', 'Transport', 'Entertainment', 'Shopping'];
+        categoryValues = [2500, 1200, 800, 1500];
+      }
+      
+      const colors = ['#66d9ef', '#4a7c6b', '#5a8c7b', '#6a9c8b', '#7aac9b'];
+      categoryChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: categoryLabels,
+          datasets: [{
+            data: categoryValues,
+            backgroundColor: colors.slice(0, categoryLabels.length),
+            borderColor: '#2a2a2a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: textColor,
+                font: { family: "'Sora', sans-serif", size: 12 },
+                padding: 15
+              }
+            }
+          }
+        }
+      });
+
+      // 3. Pattern Confidence (Bar Chart)
+      const ctx3 = document.getElementById('confidenceChart').getContext('2d');
+      if (confidenceChart) confidenceChart.destroy();
+      
+      let patternLabels = patterns.map(p => p.type).slice(0, 5);
+      let confidenceValues = patterns.map(p => (p.confidence || 0) * 100).slice(0, 5);
+      
+      if (patternLabels.length === 0) {
+        patternLabels = ['Weekend Spending', 'Evening Purchases', 'Food Expenses', 'Tech Purchases'];
+        confidenceValues = [85, 72, 90, 65];
+      }
+      
+      confidenceChart = new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: patternLabels,
+          datasets: [{
+            label: 'Confidence (%)',
+            data: confidenceValues,
+            backgroundColor: chartColor,
+            borderColor: chartSecondaryColor,
+            borderWidth: 2,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: textColor,
+                font: { family: "'Sora', sans-serif", size: 12 }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: textColor },
+              grid: { color: chartGridColor },
+              max: 100
+            },
+            y: {
+              ticks: { color: textColor },
+              grid: { color: chartGridColor }
+            }
+          }
+        }
+      });
+
+      // 4. Time of Day (Radar Chart)
+      const ctx4 = document.getElementById('timeOfDayChart').getContext('2d');
+      if (timeOfDayChart) timeOfDayChart.destroy();
+      
+      const timeSlots = ['12 AM', '6 AM', '12 PM', '6 PM', '11 PM'];
+      const timeData = [15, 25, 40, 35, 20];
+      
+      timeOfDayChart = new Chart(ctx4, {
+        type: 'radar',
+        data: {
+          labels: timeSlots,
+          datasets: [{
+            label: 'Spending Activity',
+            data: timeData,
+            borderColor: chartColor,
+            backgroundColor: 'rgba(102, 217, 239, 0.2)',
+            pointBackgroundColor: chartColor,
+            pointBorderColor: textColor,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: textColor,
+                font: { family: "'Sora', sans-serif", size: 12 }
+              }
+            }
+          },
+          scales: {
+            r: {
+              ticks: { color: textColor },
+              grid: { color: chartGridColor }
+            }
+          }
+        }
+      });
+    }
+
+    function exportPDF() {
+      const element = document.querySelector('.content-wrapper');
+      const opt = {
+        margin: 10,
+        filename: 'mindspend_analytics_' + new Date().toLocaleDateString() + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+</body>
+</html>

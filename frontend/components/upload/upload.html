@@ -1,0 +1,21 @@
+<!-- Upload Form Section -->
+<div class="card">
+  <h2>Upload Your Statement</h2>
+  <div class="input-group">
+    <label>User ID</label>
+    <input type="text" id="user_id" placeholder="demo-user" />
+  </div>
+  <div class="input-group">
+    <label>Auth Token (Optional)</label>
+    <input type="text" id="auth_token" placeholder="Bearer token" />
+  </div>
+  <div class="input-group">
+    <label>Transaction File</label>
+    <input type="file" id="file" accept=".csv,.ofx" />
+  </div>
+  <div class="button-group">
+    <button id="upload">Analyze</button>
+    <button id="export">Analyze + Export</button>
+  </div>
+  <div id="status"></div>
+</div>

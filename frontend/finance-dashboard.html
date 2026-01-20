@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finance Dashboard — MindSpend Labs</title>
+  
+  <!-- Sora Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- AOS (Animate On Scroll) Library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  
+  <!-- Supabase Library (optional - for authentication features) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  
+  <!-- Unified Storage Manager -->
+  <script src="utils/storage.js"></script>
+  
+  <!-- Supabase Configuration (optional) -->
+  <script src="utils/supabase.js" defer></script>
+  
+  <!-- Authentication & Navigation -->
+  <script src="utils/auth.js" defer></script>
+  <script src="utils/api.js" defer></script>
+  <script src="utils/navigation.js" defer></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      color: #2d3436;
+      padding: 0;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    /* Animated scrolling background */
+    @-webkit-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @-moz-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @-o-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+
+    /* Animated pattern background container */
+    .bg-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC") repeat 0 0;
+      -webkit-animation: bg-scrolling-reverse 0.92s infinite linear;
+      -moz-animation: bg-scrolling-reverse 0.92s infinite linear;
+      -o-animation: bg-scrolling-reverse 0.92s infinite linear;
+      animation: bg-scrolling-reverse 0.92s infinite linear;
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 2rem 0;
+    }
+
+    header h1 {
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: #4d7464;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #636e72;
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    .cards-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e0ddd5;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+      animation: slideInUp 0.6s ease-out;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      border-color: #6b9080;
+    }
+
+    .card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      color: #6b9080;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Income Input Styling */
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #636e72;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e0ddd5;
+      border-radius: 10px;
+      background: #f9f8f6;
+      color: #2d3436;
+      font-size: 1rem;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #6b9080;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(107, 144, 128, 0.1);
+    }
+
+    /* Card 1: Income & Highest Category */
+    .metric {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #6b9080;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-label {
+      color: #636e72;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .highest-category {
+      background: rgba(107, 144, 128, 0.05);
+      border-left: 4px solid #6b9080;
+      padding: 1.5rem;
+      border-radius: 10px;
+      margin-top: 1.5rem;
+    }
+
+    .highest-category p {
+      margin-bottom: 0.75rem;
+      color: #2d3436;
+      line-height: 1.6;
+    }
+
+    .highest-category .category-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #6b9080;
+    }
+
+    .highest-category .category-percentage {
+      color: #636e72;
+      font-size: 0.95rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Card 2: Savings Tips */
+    .tips-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .tips-list li {
+      background: rgba(107, 144, 128, 0.05);
+      border-left: 4px solid #6b9080;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      line-height: 1.6;
+      color: #2d3436;
+    }
+
+    .tips-list li strong {
+      color: #6b9080;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .tips-list li .savings-amount {
+      color: #00b894;
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    .no-tips {
+      text-align: center;
+      padding: 2rem;
+      color: #636e72;
+      background: rgba(107, 144, 128, 0.05);
+      border-radius: 10px;
+    }
+
+    /* Card 3: Essential Expenses */
+    .expense-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-section {
+      background: rgba(107, 144, 128, 0.05);
+      border: 1px solid rgba(107, 144, 128, 0.2);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(107, 144, 128, 0.1);
+    }
+
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+
+    .summary-label {
+      color: #636e72;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .summary-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #2d3436;
+    }
+
+    .summary-item.highlight {
+      background: rgba(107, 144, 128, 0.1);
+      padding: 1rem;
+      margin: 1rem -1.5rem -1rem -1.5rem;
+      border-radius: 8px;
+    }
+
+    .summary-item.highlight .summary-value {
+      color: #6b9080;
+      font-size: 1.5rem;
+    }
+
+    .summary-item.warning .summary-value {
+      color: #d63031;
+    }
+
+    .progress-bar-container {
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .progress-bar-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+      color: #636e72;
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      height: 12px;
+      background: #e0ddd5;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6b9080 0%, #5a7d6f 100%);
+      transition: width 0.4s ease;
+    }
+
+    .warning-message {
+      background: rgba(214, 48, 49, 0.1);
+      border-left: 4px solid #d63031;
+      padding: 1rem;
+      border-radius: 8px;
+      color: #c0392b;
+      margin-top: 1rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    .warning-message.show {
+      display: block;
+    }
+
+    .save-button {
+      width: 100%;
+      padding: 1rem;
+      background: #6b9080;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.3s ease;
+      margin-top: 1.5rem;
+      box-shadow: 0 2px 8px rgba(107, 144, 128, 0.2);
+    }
+
+    .save-button:hover {
+      background: #5a7d6f;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(107, 144, 128, 0.3);
+    }
+
+    .success-message {
+      background: rgba(0, 184, 148, 0.1);
+      border-left: 4px solid #00b894;
+      padding: 1rem;
+      border-radius: 8px;
+      color: #00916d;
+      margin-bottom: 1rem;
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #b2bec3;
+    }
+
+    .no-data h2 {
+      color: #636e72;
+      margin-bottom: 1rem;
+    }
+
+    .no-data button {
+      padding: 0.75rem 2rem;
+      background: #6b9080;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: 'Sora', sans-serif;
+      margin-top: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .no-data button:hover {
+      background: #5a7d6f;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      header h1 {
+        font-size: 2rem;
+      }
+
+      .cards-container {
+        gap: 1.5rem;
+      }
+
+      .card {
+        padding: 1.5rem;
+      }
+
+      .expense-fields {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-buttons {
+        flex-direction: column;
+      }
+
+      .nav-buttons button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="bg-container"></div>
+  
+  <div class="content-wrapper">
+    <header>
+      <h1>Finance Dashboard</h1>
+      <p>Smart Financial Planning & Analysis</p>
+    </header>
+
+    <div class="cards-container" id="cards-container"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Initialize Navigation
+      if (typeof Navigation !== 'undefined') {
+        await Navigation.init();
+      }
+      
+      AOS.init({
+        duration: 700,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 50,
+        disable: function() {
+          return window.innerWidth < 768;
+        }
+      });
+
+      loadFinanceDashboard();
+    });
+
+    function loadFinanceDashboard() {
+      console.log('Loading finance dashboard...');
+      const data = StorageManager.load();
+      
+      if (!data || !data.transactions || data.transactions.length === 0) {
+        document.getElementById('cards-container').innerHTML = `
+          <div class="card no-data">
+            <h2>No Analysis Data Found</h2>
+            <p>Please upload and analyze your bank statement first.</p>
+            <button onclick="window.location.href='index.html'">Upload Data Now</button>
+          </div>
+        `;
+        return;
+      }
+
+      renderFinanceDashboard(data.transactions || []);
+    }
+
+    function renderFinanceDashboard(transactions) {
+      const metrics = calculateFinancialMetrics(transactions);
+
+      let html = '';
+
+      // Card 1: Income & Highest Spending
+      html += `
+        <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
+          <h3>Monthly Income & Spending Analysis</h3>
+          
+          <div class="input-group">
+            <label for="monthlyIncome">Monthly Income (₹)</label>
+            <input 
+              type="number" 
+              id="monthlyIncome" 
+              placeholder="Enter your monthly income" 
+              min="0"
+              value="${metrics.savedIncome || ''}"
+              onchange="updateAllCalculations()"
+              oninput="updateAllCalculations()"
+            />
+          </div>
+
+          <div class="highest-category">
+            <p>You spent the most on:</p>
+            <div class="category-name">${metrics.topCategory.name}</div>
+            <p style="margin: 0.5rem 0 0 0;">Amount: <strong style="color: #d63031;">₹${metrics.topCategory.amount.toLocaleString()}</strong></p>
+            <div class="category-percentage" id="categoryPercentage">
+              Calculating...
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Card 2: Personalized Savings Tips
+      html += `
+        <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
+          <h3>Personalized Savings Tips</h3>
+          <ul class="tips-list" id="tips-list"></ul>
+        </div>
+      `;
+
+      // Card 3: Essential Expenses Form
+      html += `
+        <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
+          <h3>Essential Expenses & Disposable Income</h3>
+          
+          <div id="success-message" class="success-message"></div>
+          
+          <div class="expense-fields">
+            <div class="input-group">
+              <label for="rent">Rent/Mortgage (₹)</label>
+              <input type="number" id="rent" placeholder="15000" min="0" value="15000" oninput="updateDisposableIncome()"/>
+            </div>
+            <div class="input-group">
+              <label for="utilities">Utilities - Electricity, Water, Internet (₹)</label>
+              <input type="number" id="utilities" placeholder="3000" min="0" value="3000" oninput="updateDisposableIncome()"/>
+            </div>
+            <div class="input-group">
+              <label for="tuition">Tuition/Education Fees (₹)</label>
+              <input type="number" id="tuition" placeholder="0" min="0" value="0" oninput="updateDisposableIncome()"/>
+            </div>
+            <div class="input-group">
+              <label for="loans">Loan Payments (₹)</label>
+              <input type="number" id="loans" placeholder="5000" min="0" value="5000" oninput="updateDisposableIncome()"/>
+            </div>
+            <div class="input-group">
+              <label for="insurance">Insurance (₹)</label>
+              <input type="number" id="insurance" placeholder="2000" min="0" value="2000" oninput="updateDisposableIncome()"/>
+            </div>
+            <div class="input-group">
+              <label for="subscriptions">Subscriptions - Netflix, Spotify, etc. (₹)</label>
+              <input type="number" id="subscriptions" placeholder="500" min="0" value="500" oninput="updateDisposableIncome()"/>
+            </div>
+            <div class="input-group">
+              <label for="other">Other Recurring Expenses (₹)</label>
+              <input type="number" id="other" placeholder="0" min="0" value="0" oninput="updateDisposableIncome()"/>
+            </div>
+          </div>
+
+          <div class="summary-section">
+            <div class="summary-item">
+              <span class="summary-label">Monthly Income</span>
+              <span class="summary-value" id="summary-income">₹0</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Total Essential Expenses</span>
+              <span class="summary-value" id="summary-essentials">₹0</span>
+            </div>
+            <div class="summary-item highlight">
+              <span class="summary-label">Disposable Income</span>
+              <span class="summary-value" id="summary-disposable">₹0</span>
+            </div>
+
+            <div class="progress-bar-container">
+              <div class="progress-bar-label">
+                <span>Essential Expenses vs Disposable</span>
+                <span id="percentage-text">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div id="warning-message" class="warning-message"></div>
+          </div>
+
+          <button class="save-button" onclick="saveFinancialMetrics()">Save Metrics</button>
+        </div>
+      `;
+
+      document.getElementById('cards-container').innerHTML = html;
+
+      // Populate tips
+      populateSavingsTips(metrics);
+      
+      // Initial calculation
+      updateDisposableIncome();
+
+      // Re-initialize AOS for new elements
+      AOS.refresh();
+    }
+
+    function calculateFinancialMetrics(transactions) {
+      let totalExpenses = 0;
+      let totalIncome = 0;
+      const categories = {};
+      const savedMetrics = StorageManager.load()?.financialMetrics || {};
+
+      transactions.forEach(t => {
+        const amount = Math.abs(parseFloat(t.Amount || t.amount || 0));
+        const type = (t.Type || t.type || '').toLowerCase();
+        const category = t.Category || t.category || t.base_category || 'Other';
+
+        if (type === 'credit') {
+          totalIncome += amount;
+        } else {
+          totalExpenses += amount;
+          categories[category] = (categories[category] || 0) + amount;
+        }
+      });
+
+      const sortedCategories = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+      const topCategory = sortedCategories[0] || ['Other', 0];
+
+      return {
+        totalIncome,
+        totalExpenses,
+        categories,
+        topCategory: { name: topCategory[0], amount: topCategory[1] },
+        savedIncome: savedMetrics.monthlyIncome || ''
+      };
+    }
+
+    function populateSavingsTips(metrics) {
+      const income = parseFloat(document.getElementById('monthlyIncome').value) || 0;
+      const tipsContainer = document.getElementById('tips-list');
+      
+      if (income === 0) {
+        tipsContainer.innerHTML = '<li class="no-tips">Enter your monthly income above to get personalized tips.</li>';
+        return;
+      }
+
+      const tips = generateSavingsTips(income, metrics);
+      
+      if (tips.length === 0) {
+        tipsContainer.innerHTML = '<li class="no-tips">Your spending is well-balanced. Keep maintaining healthy financial habits.</li>';
+        return;
+      }
+
+      tipsContainer.innerHTML = tips.map(tip => `
+        <li>
+          <strong>${tip.title}</strong>
+          ${tip.description}
+          <div class="savings-amount">Potential Savings: ₹${tip.savings.toLocaleString()}/month</div>
+        </li>
+      `).join('');
+    }
+
+    function generateSavingsTips(income, metrics) {
+      const tips = [];
+      const totalExpenses = metrics.totalExpenses;
+      
+      // Check dining/food spending
+      const foodSpending = metrics.categories['Food & Dining'] || metrics.categories['Food'] || 0;
+      if (foodSpending > income * 0.15) {
+        const saveable = Math.round(foodSpending * 0.3);
+        tips.push({
+          title: 'Reduce Dining Out Expenses',
+          description: `You're spending ₹${Math.round(foodSpending).toLocaleString()}/month on food. Cooking 3 more meals/week at home could save significant money.`,
+          savings: saveable
+        });
+      }
+
+      // Check transport spending
+      const transportSpending = metrics.categories['Transport'] || metrics.categories['Travel'] || metrics.categories['Fuel'] || 0;
+      if (transportSpending > income * 0.2) {
+        const saveable = Math.round(transportSpending * 0.2);
+        tips.push({
+          title: 'Optimize Transportation Costs',
+          description: `You're spending ₹${Math.round(transportSpending).toLocaleString()}/month on transport. Using public transit or carpooling could reduce this.`,
+          savings: saveable
+        });
+      }
+
+      // Check entertainment spending
+      const entertainmentSpending = metrics.categories['Entertainment'] || 0;
+      if (entertainmentSpending > income * 0.1) {
+        const saveable = Math.round(entertainmentSpending * 0.4);
+        tips.push({
+          title: 'Cut Entertainment Expenses',
+          description: `Entertainment spending is ₹${Math.round(entertainmentSpending).toLocaleString()}/month. Consider free activities or reduce paid entertainment.`,
+          savings: saveable
+        });
+      }
+
+      // Check shopping spending
+      const shoppingSpending = metrics.categories['Shopping'] || metrics.categories['Retail'] || 0;
+      if (shoppingSpending > income * 0.12) {
+        const saveable = Math.round(shoppingSpending * 0.25);
+        tips.push({
+          title: 'Mindful Shopping Habits',
+          description: `You're spending ₹${Math.round(shoppingSpending).toLocaleString()}/month on shopping. Apply the 24-hour rule before purchases.`,
+          savings: saveable
+        });
+      }
+
+      // General savings tip if expenses are high
+      if (totalExpenses > income * 0.85) {
+        tips.push({
+          title: 'Build an Emergency Fund',
+          description: 'Your expenses are close to your income. Even ₹2,000-3,000/month in savings can build a 3-month emergency fund.',
+          savings: 2500
+        });
+      }
+
+      return tips.slice(0, 3); // Return top 3 tips
+    }
+
+    function updateAllCalculations() {
+      const income = parseFloat(document.getElementById('monthlyIncome').value) || 0;
+      const data = StorageManager.load();
+      const metrics = calculateFinancialMetrics(data.transactions || []);
+
+      // Update category percentage
+      const percentage = income > 0 ? Math.round((metrics.topCategory.amount / income) * 100) : 0;
+      document.getElementById('categoryPercentage').textContent = 
+        `This is ${percentage}% of your monthly income`;
+
+      // Update tips
+      populateSavingsTips(metrics);
+
+      // Update disposable income
+      updateDisposableIncome();
+    }
+
+    function updateDisposableIncome() {
+      const income = parseFloat(document.getElementById('monthlyIncome').value) || 0;
+      const rent = parseFloat(document.getElementById('rent').value) || 0;
+      const utilities = parseFloat(document.getElementById('utilities').value) || 0;
+      const tuition = parseFloat(document.getElementById('tuition').value) || 0;
+      const loans = parseFloat(document.getElementById('loans').value) || 0;
+      const insurance = parseFloat(document.getElementById('insurance').value) || 0;
+      const subscriptions = parseFloat(document.getElementById('subscriptions').value) || 0;
+      const other = parseFloat(document.getElementById('other').value) || 0;
+
+      const totalEssentials = rent + utilities + tuition + loans + insurance + subscriptions + other;
+      const disposable = income - totalEssentials;
+      const essentialsPercentage = income > 0 ? (totalEssentials / income) * 100 : 0;
+
+      // Update summary display
+      document.getElementById('summary-income').textContent = `₹${income.toLocaleString()}`;
+      document.getElementById('summary-essentials').textContent = `₹${Math.round(totalEssentials).toLocaleString()}`;
+      document.getElementById('summary-disposable').textContent = `₹${Math.round(disposable).toLocaleString()}`;
+      
+      // Update progress bar
+      document.getElementById('progress-fill').style.width = Math.min(essentialsPercentage, 100) + '%';
+      document.getElementById('percentage-text').textContent = Math.round(essentialsPercentage) + '%';
+
+      // Update warning message
+      const warningMessage = document.getElementById('warning-message');
+      if (disposable < 0) {
+        warningMessage.textContent = 'Warning: Your essential expenses exceed your income! Review your budget.';
+        warningMessage.classList.add('show');
+      } else {
+        warningMessage.classList.remove('show');
+      }
+    }
+
+    function saveFinancialMetrics() {
+      const income = parseFloat(document.getElementById('monthlyIncome').value);
+      
+      if (!income || income <= 0) {
+        alert('Please enter a valid monthly income to save metrics.');
+        return;
+      }
+
+      const rent = parseFloat(document.getElementById('rent').value) || 0;
+      const utilities = parseFloat(document.getElementById('utilities').value) || 0;
+      const tuition = parseFloat(document.getElementById('tuition').value) || 0;
+      const loans = parseFloat(document.getElementById('loans').value) || 0;
+      const insurance = parseFloat(document.getElementById('insurance').value) || 0;
+      const subscriptions = parseFloat(document.getElementById('subscriptions').value) || 0;
+      const other = parseFloat(document.getElementById('other').value) || 0;
+
+      const financialMetrics = {
+        monthlyIncome: income,
+        essentialExpenses: {
+          rent,
+          utilities,
+          tuition,
+          loans,
+          insurance,
+          subscriptions,
+          other
+        },
+        lastUpdated: new Date().toISOString()
+      };
+
+      // Save to StorageManager
+      const currentData = StorageManager.load();
+      const updatedData = {
+        ...currentData,
+        financialMetrics
+      };
+      StorageManager.save(updatedData);
+
+      // Show success message
+      const successMessage = document.getElementById('success-message');
+      successMessage.textContent = 'Financial metrics saved successfully!';
+      successMessage.classList.add('show');
+
+      setTimeout(() => {
+        successMessage.classList.remove('show');
+      }, 3000);
+
+      console.log('Financial metrics saved:', financialMetrics);
+    }
+  </script>
+</body>
+</html>

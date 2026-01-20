@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insights — MindSpend Labs</title>
+  
+  <!-- Sora Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- AOS (Animate On Scroll) Library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  
+  <!-- Supabase Library (optional - for authentication features) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  
+  <!-- Unified Storage Manager -->
+  <script src="utils/storage.js"></script>  
+  
+  <!-- Supabase Configuration (optional) -->
+  <script src="utils/supabase.js" defer></script>
+  
+  <!-- Authentication & Navigation -->
+  <script src="utils/auth.js" defer></script>
+  <script src="utils/api.js" defer></script>
+  <script src="utils/navigation.js" defer></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      color: #2d3436;
+      padding: 0;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    /* Animated scrolling background */
+    @-webkit-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @-moz-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @-o-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+
+    /* Animated pattern background container */
+    .bg-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC") repeat 0 0;
+      -webkit-animation: bg-scrolling-reverse 0.92s infinite linear;
+      -moz-animation: bg-scrolling-reverse 0.92s infinite linear;
+      -o-animation: bg-scrolling-reverse 0.92s infinite linear;
+      animation: bg-scrolling-reverse 0.92s infinite linear;
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 2rem 0;
+    }
+
+    header h1 {
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: #4d7464;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #636e72;
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-buttons {
+      text-align: center;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-buttons button {
+      padding: 0.75rem 1.5rem;
+      background: #6b9080;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(107, 144, 128, 0.2);
+      font-family: inherit;
+    }
+
+    .nav-buttons button:hover {
+      background: #5a7d6f;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(107, 144, 128, 0.3);
+    }
+
+    .nav-buttons button.secondary {
+      background: #a4c3b2;
+    }
+
+    .nav-buttons button.secondary:hover {
+      background: #8fb0a0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e0ddd5;
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      border-color: #6b9080;
+    }
+
+    .card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: #6b9080;
+    }
+
+    ul {
+      padding-left: 1.5rem;
+      color: #2d3436;
+    }
+
+    ul li {
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+
+    ul li::marker {
+      color: #6b9080;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 3.5rem 2.5rem;
+      background: white;
+      border-radius: 24px;
+      border: 2px solid #e0ddd5;
+      margin: 2rem auto;
+      max-width: 600px;
+      box-shadow: 0 2px 8px rgba(107, 144, 128, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .no-data:hover {
+      border-color: rgba(107, 144, 128, 0.3);
+      box-shadow: 0 4px 16px rgba(107, 144, 128, 0.12);
+    }
+
+    .no-data h2 {
+      color: #4d7464;
+      margin-bottom: 1rem;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .no-data p {
+      color: #b2bec3;
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .no-data button {
+      padding: 14px 32px;
+      background: #6b9080;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    .no-data button:hover {
+      background: #5a7d6f;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(107, 144, 128, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+      .nav-buttons {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <!-- Geometric Pattern Background -->
+  <div class="bg-container"></div>
+  
+  <!-- Main Content -->
+  <div class="content-wrapper">
+    <header>
+      <h1>Financial Insights</h1>
+      <p>Smart Analysis of Your Spending Behavior</p>
+    </header>
+
+ 
+  <div class="container" id="insights-container">
+    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
+      <h3>Your Spending Habits</h3>
+      <ul id="patterns"></ul>
+    </div>
+
+    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
+      <h3>When You Spend More</h3>
+      <ul id="triggers"></ul>
+    </div>
+
+    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
+      <h3>What We Found</h3>
+      <ul id="insights"></ul>
+    </div>
+
+    <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="400">
+      <h3>Tips to Save Money</h3>
+      <ul id="challenges"></ul>
+    </div>
+  </div>
+
+  <script>
+    // Initialize AOS
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Initialize Navigation
+      if (typeof Navigation !== 'undefined') {
+        await Navigation.init();
+      }
+      
+      AOS.init({
+        duration: 700,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 50,
+        disable: function() {
+          return window.innerWidth < 768;
+        }
+      });
+
+      loadInsights();
+    });
+
+    function loadInsights() {
+      const data = StorageManager.load();
+      
+      if (!data || !data.transactions || data.transactions.length === 0) {
+        document.getElementById('insights-container').innerHTML = `
+          <div class="no-data">
+            <h2>No Analysis Data Found</h2>
+            <p>Please upload and analyze your bank statement first.</p>
+            <button onclick="window.location.href='index.html'" 
+                    style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: #6b9080; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600;">
+              Go to Upload
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      generateSmartInsights(data.transactions || []);
+    }
+
+    function generateSmartInsights(transactions) {
+      const analysis = analyzeTransactions(transactions);
+      
+      // Financial Health Score
+      const healthCard = `
+        <div class="card" data-aos="fade-up">
+          <h3>Financial Health Score</h3>
+          <div style="text-align: center; margin: 1.5rem 0;">
+            <div style="font-size: 4rem; font-weight: 700; color: ${analysis.healthScore >= 7 ? '#00b894' : analysis.healthScore >= 5 ? '#fdcb6e' : '#d63031'};">
+              ${analysis.healthScore}/10
+            </div>
+            <div style="margin-top: 1rem;">
+              <div style="margin: 0.5rem 0;">${analysis.healthScore >= 8 ? '●' : analysis.healthScore >= 6 ? '◐' : '○'} Savings Rate: ${analysis.savingsRate}%</div>
+              <div style="margin: 0.5rem 0;">${analysis.avgDailySpend <= 2000 ? '●' : '◐'} Daily Burn: ₹${analysis.avgDailySpend.toLocaleString()}</div>
+              <div style="margin: 0.5rem 0;">${analysis.topCategory.percentage <= 40 ? '●' : '◐'} Top Category: ${analysis.topCategory.name} (${analysis.topCategory.percentage}%)</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Spending Alerts
+      const alertsCard = `
+        <div class="card" data-aos="fade-up">
+          <h3>Spending Alerts</h3>
+          <ul>
+            ${analysis.alerts.map(alert => `<li style="color: ${alert.severity === 'high' ? '#d63031' : alert.severity === 'medium' ? '#fdcb6e' : '#00b894'};">${alert.icon} ${alert.message}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+
+      // Smart Recommendations
+      const recommendationsCard = `
+        <div class="card" data-aos="fade-up">
+          <h3>Smart Recommendations</h3>
+          <ul>
+            ${analysis.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+          </ul>
+          <div style="margin-top: 1rem; padding: 1rem; background: rgba(107, 144, 128, 0.1); border-radius: 8px; text-align: center;">
+            <strong>Potential Monthly Savings: ₹${analysis.potentialSavings.toLocaleString()}</strong>
+          </div>
+        </div>
+      `;
+
+      // Spending Patterns
+      const patternsCard = `
+        <div class="card" data-aos="fade-up">
+          <h3>Your Spending Personality</h3>
+          <div style="background: rgba(107, 144, 128, 0.05); padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+            <div style="font-size: 1.2rem; font-weight: 600; color: #6b9080; margin-bottom: 0.5rem;">"${analysis.personality}"</div>
+            <div style="color: #636e72;">${analysis.personalityDesc}</div>
+          </div>
+          <ul>
+            ${analysis.patterns.map(pattern => `<li>${pattern}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+
+      // Category Insights
+      const categoryCard = `
+        <div class="card" data-aos="fade-up">
+          <h3>Category Deep Dive</h3>
+          <ul>
+            ${analysis.categoryInsights.map(insight => `<li>${insight}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+
+      // Recurring Expenses
+      const recurringCard = `
+        <div class="card" data-aos="fade-up">
+          <h3>Subscription Audit</h3>
+          <ul>
+            ${analysis.subscriptions.map(sub => `<li>${sub.status} ${sub.name}: ₹${sub.amount.toLocaleString()} ${sub.note ? '- ' + sub.note : ''}</li>`).join('')}
+          </ul>
+          <div style="margin-top: 1rem; color: #636e72; font-size: 0.9rem;">
+            Monthly Recurring Total: ₹${analysis.totalRecurring.toLocaleString()}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('insights-container').innerHTML = 
+        healthCard + alertsCard + recommendationsCard + patternsCard + categoryCard + recurringCard;
+
+      // Re-initialize AOS for new elements
+      AOS.refresh();
+    }
+
+    function analyzeTransactions(transactions) {
+      let totalIncome = 0, totalExpenses = 0;
+      const categories = {};
+      const weeklySpend = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const subscriptions = [];
+
+      transactions.forEach(t => {
+        const amount = Math.abs(parseFloat(t.Amount || t.amount || 0));
+        const type = (t.Type || t.type || '').toLowerCase();
+        const category = t.Category || t.category || 'Other';
+        const desc = (t.Description || t.description || '').toLowerCase();
+        const date = new Date(t.Date || t.date);
+
+        if (type === 'credit') {
+          totalIncome += amount;
+        } else {
+          totalExpenses += amount;
+          categories[category] = (categories[category] || 0) + amount;
+          weeklySpend[dayNames[date.getDay()]] += amount;
+
+          // Detect subscriptions
+          if (desc.includes('subscription') || desc.includes('netflix') || desc.includes('prime') || desc.includes('spotify') || desc.includes('gym')) {
+            subscriptions.push({ name: desc, amount, desc: t.Description || t.description });
+          }
+        }
+      });
+
+      const savings = totalIncome - totalExpenses;
+      const savingsRate = totalIncome > 0 ? Math.round((savings / totalIncome) * 100) : 0;
+      const avgDailySpend = Math.round(totalExpenses / transactions.length);
+      
+      // Health score calculation
+      let healthScore = 5;
+      if (savingsRate >= 30) healthScore += 2;
+      else if (savingsRate >= 20) healthScore += 1;
+      if (avgDailySpend <= 1500) healthScore += 1.5;
+      else if (avgDailySpend <= 2000) healthScore += 0.5;
+      healthScore = Math.min(10, healthScore);
+
+      // Top category
+      const sortedCategories = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+      const topCategory = sortedCategories[0] || ['Other', 0];
+      const topCategoryPercentage = Math.round((topCategory[1] / totalExpenses) * 100);
+
+      // Generate alerts
+      const alerts = [];
+      if (savingsRate < 10) alerts.push({ severity: 'high', icon: '[!]', message: `Low savings rate (${savingsRate}%) - Try to save at least 20%` });
+      if (avgDailySpend > 2500) alerts.push({ severity: 'high', icon: '[!]', message: `High daily spending ₹${avgDailySpend.toLocaleString()} - Reduce to ₹2,000` });
+      
+      const foodSpend = (categories['Food & Dining'] || 0);
+      if (foodSpend > totalExpenses * 0.25) {
+        alerts.push({ severity: 'medium', icon: '[→]', message: `Food spending is ${Math.round((foodSpend/totalExpenses)*100)}% of total - Cook more at home` });
+      }
+
+      const weekendSpend = weeklySpend['Sat'] + weeklySpend['Sun'];
+      const weekdaySpend = totalExpenses - weekendSpend;
+      if (weekendSpend > weekdaySpend * 0.4) {
+        alerts.push({ severity: 'medium', icon: '[→]', message: 'Weekend spending is high - Set weekend budget limit' });
+      }
+
+      if (alerts.length === 0) {
+        alerts.push({ severity: 'low', icon: '[✓]', message: 'Great job! No major concerns detected' });
+      }
+
+      // Generate recommendations
+      const recommendations = [];
+      let potentialSavings = 0;
+
+      if (foodSpend > 10000) {
+        const saveable = Math.round(foodSpend * 0.3);
+        recommendations.push(`Cook 2 more meals/week instead of ordering → Save ₹${saveable.toLocaleString()}/month`);
+        potentialSavings += saveable;
+      }
+
+      if (subscriptions.length > 2) {
+        recommendations.push(`Cancel ${Math.floor(subscriptions.length/2)} unused subscriptions → Save ₹${Math.round(subscriptions.reduce((sum, s) => sum + s.amount, 0) / 2).toLocaleString()}/month`);
+        potentialSavings += Math.round(subscriptions.reduce((sum, s) => sum + s.amount, 0) / 2);
+      }
+
+      if (weekendSpend > 8000) {
+        recommendations.push(`Set weekend spending limit of ₹5,000 → Save ₹${Math.round((weekendSpend - 5000)/4).toLocaleString()}/month`);
+        potentialSavings += Math.round((weekendSpend - 5000)/4);
+      }
+
+      // Personality detection
+      let personality = "Balanced Spender";
+      let personalityDesc = "You maintain a good balance between spending and saving.";
+      
+      if (weekendSpend > weekdaySpend * 0.5) {
+        personality = "Weekend Warrior";
+        personalityDesc = "You tend to spend more on weekends - plan weekend budgets!";
+      } else if (foodSpend > totalExpenses * 0.3) {
+        personality = "Foodie Enthusiast";
+        personalityDesc = "You love good food - consider meal prepping to save money!";
+      } else if (savingsRate > 30) {
+        personality = "Super Saver";
+        personalityDesc = "Excellent savings discipline - keep it up!";
+      }
+
+      // Patterns
+      const patterns = [];
+      patterns.push(`You spend most on ${topCategory[0]} (${topCategoryPercentage}% of expenses)`);
+      const highestDay = Object.entries(weeklySpend).sort((a, b) => b[1] - a[1])[0];
+      patterns.push(`Highest spending day: ${highestDay[0]} (₹${Math.round(highestDay[1]).toLocaleString()})`);
+      patterns.push(`Average transaction size: ₹${Math.round(totalExpenses / transactions.length).toLocaleString()}`);
+
+      // Category insights
+      const categoryInsights = sortedCategories.slice(0, 5).map(([cat, amt]) => {
+        const pct = Math.round((amt / totalExpenses) * 100);
+        return `${cat}: ₹${amt.toLocaleString()} (${pct}%)`;
+      });
+
+      // Subscription audit
+      const subList = [];
+      subscriptions.forEach(sub => {
+        const status = sub.amount > 1000 ? '[!]' : '[✓]';
+        const note = sub.amount > 1000 ? 'Review usage' : 'Good value';
+        subList.push({ status, name: sub.desc, amount: sub.amount, note });
+      });
+
+      const totalRecurring = subscriptions.reduce((sum, s) => sum + s.amount, 0);
+
+      return {
+        healthScore: healthScore.toFixed(1),
+        savingsRate,
+        avgDailySpend,
+        topCategory: { name: topCategory[0], percentage: topCategoryPercentage },
+        alerts,
+        recommendations,
+        potentialSavings,
+        personality,
+        personalityDesc,
+        patterns,
+        categoryInsights,
+        subscriptions: subList.length > 0 ? subList : [{ status: '[✓]', name: 'No recurring subscriptions detected', amount: 0, note: '' }],
+        totalRecurring
+      };
+    }
+  </script>
+  </div>
+  <!-- End Content Wrapper -->
+</body>
+</html>

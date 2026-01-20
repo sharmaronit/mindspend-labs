@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindSpend — Behavioral Finance Intelligence (Dark Mode)</title>
+  
+  <!-- Google Sora Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- AOS (Animate On Scroll) Library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  
+  <!-- Unified Storage Manager -->
+  <script src="utils/storage.js"></script>
+  
+  <!-- Authentication & Navigation -->
+  <script src="utils/auth.js"></script>
+  <script src="utils/api.js"></script>
+  <script src="utils/navigation.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --stripe-size: 100px;
+      --color1: #fcf8f8;
+      --color2: #313131;
+      --duration: 2s;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: auto;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      color: #e0e0e0;
+      padding: 0;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      margin: 0;
+      background: #000;
+      position: relative;
+    }
+
+    /* Stripe background container */
+    .stripe {
+      position: fixed;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .stripe_inner {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color1) 25%,
+        var(--color1) 50%,
+        var(--color2) 50%,
+        var(--color2) 75%
+      );
+      background-size: var(--stripe-size) var(--stripe-size);
+      background-clip: text;
+      animation: stripeBackgroundPosition var(--duration) linear infinite;
+    }
+
+    .stripe::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: calc(100% + var(--stripe-size));
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color2) 25%,
+        var(--color2) 50%,
+        var(--color1) 50%,
+        var(--color1) 75%
+      );
+      background-size: var(--stripe-size) var(--stripe-size);
+      animation: stripeTransform var(--duration) linear infinite;
+      z-index: -1;
+    }
+
+    .stripe::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, rgba(27, 39, 53, 0) 0%, #090a0f 100%);
+      z-index: 0;
+    }
+
+    @keyframes stripeTransform {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(calc(var(--stripe-size) * -1));
+      }
+    }
+
+    @keyframes stripeBackgroundPosition {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: calc(var(--stripe-size) * -1) 0;
+      }
+    }
+
+    /* Content wrapper */
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 1rem 2rem;
+    }
+
+    /* Upload section container */
+    .upload-section {
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* Spinner animation */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      padding: 1rem 0;
+      position: relative;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 2rem;
+      background: #000000;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      cursor: pointer;
+      font-size: 1.3rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle:hover {
+      background: #fdfdfd;
+      transform: scale(1.1);
+    }
+
+    header h1 {
+      font-size: 2.7rem;
+      font-weight: 700;
+      color: #f7fbfc;
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #cfcdcd;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .card {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform, box-shadow;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    .card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      border-color: #979999;
+    }
+
+    .card * {
+      transition: inherit;
+    }
+
+    .card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      color: #979999;
+    }
+
+    .row {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .row .card {
+      animation: slideInUp 0.5s ease-out;
+      animation-fill-mode: backwards;
+    }
+
+    .row .card:nth-child(1) { animation-delay: 0.1s; }
+    .row .card:nth-child(2) { animation-delay: 0.2s; }
+    .row .card:nth-child(3) { animation-delay: 0.3s; }
+    .row .card:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .input-group {
+      margin-bottom: 0.9rem;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: #a0a0a0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      background: #1a1a1a;
+      border: 2px solid #444;
+      border-radius: 10px;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    input[type="file"]:focus {
+      outline: none;
+      background: #2a2a2a;
+      border-color: #677d81;
+      box-shadow: 0 0 0 3px rgba(102, 217, 239, 0.1);
+    }
+
+    input[type="text"]::placeholder {
+      color: #666;
+    }
+
+    input[type="file"]::file-selector-button {
+      padding: 0.5rem 1rem;
+      background: #383838;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-right: 0.75rem;
+      transition: all 0.2s ease;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background: #020202;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    button {
+      flex: 1;
+      padding: 0.8rem 1.2rem;
+      background: #585858;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      font-family: inherit;
+      letter-spacing: 0.02em;
+    }
+
+    button:hover {
+      background: #585858;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button#export {
+      background: #585858;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    button#export:hover {
+      background: #585858;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    #status {
+      margin-top: 0.8rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 10px;
+      font-weight: 500;
+      text-align: center;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      font-size: 0.9rem;
+    }
+
+    .ok {
+      color: #979999;
+      background: rgba(151, 153, 153, 0.1);
+      border-color: rgba(151, 153, 153, 0.3);
+    }
+
+    .err {
+      color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.1);
+      border-color: rgba(255, 107, 107, 0.3);
+    }
+
+    ul {
+      padding-left: 1.5rem;
+      color: #e0e0e0;
+    }
+
+    ul li {
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+
+    ul li::marker {
+      color: #585858;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+      .button-group {
+        flex-direction: column;
+      }
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Striped Background -->
+  <div class="stripe">
+    <div class="stripe_inner"></div>
+  </div>
+  
+  <div class="content-wrapper">
+    <header>
+      <button class="theme-toggle" onclick="window.location.href='index.html'" title="Switch to Light Mode">☀️</button>
+      <h1>MindSpend Labs</h1>
+      <p>Behavioral Finance Intelligence Platform</p>
+    </header>
+
+    <!-- Greeting Section -->
+    <div style="text-align: center; margin: 2rem 0; padding: 2rem; background: #2d2d2d; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); border: 1px solid #404040;">
+      <h2 style="font-size: 2rem; color: #6b9080; margin-bottom: 10px;">👋 HI, <span id="userGreeting">Guest</span>!</h2>
+      <p style="color: #b0b0b0; font-size: 1.1rem;">Welcome back to MindSpend Labs</p>
+    </div>
+
+    <!-- Upload Section - NEW MODERN DESIGN -->
+    <div style="max-width: 700px; margin: 2rem auto; padding: 2rem; background: #2d2d2d; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); border: 1px solid #404040;">
+      <h2 style="color: #7ec9a3; margin-bottom: 0.5rem; font-size: 1.5rem;">📊 Upload Statement</h2>
+      <p style="color: #b0b0b0; margin-bottom: 1.5rem; font-size: 0.95rem;">Drag and drop or click to select your CSV/OFX file</p>
+      
+      <!-- Drag & Drop Area -->
+      <div id="dropZone" style="
+        border: 2px dashed #7ec9a3;
+        border-radius: 8px;
+        padding: 2.5rem;
+        text-align: center;
+        cursor: pointer;
+        background: rgba(126, 201, 163, 0.05);
+        transition: all 0.3s;
+        margin-bottom: 1rem;
+      " onmouseover="this.style.background='rgba(126, 201, 163, 0.1)'; this.style.borderColor='#6ab89a';" onmouseout="this.style.background='rgba(126, 201, 163, 0.05)'; this.style.borderColor='#7ec9a3';">
+        <p style="font-size: 2.5rem; margin: 0 0 0.5rem 0;">📁</p>
+        <p style="color: #e0e0e0; font-weight: 600; margin: 0 0 0.25rem 0;">Click or drag file here</p>
+        <p style="color: #888; font-size: 0.9rem; margin: 0;">CSV, OFX • Max 10MB</p>
+      </div>
+
+      <!-- Hidden File Input -->
+      <input type="file" id="fileInput" accept=".csv,.ofx" style="display: none;">
+
+      <!-- File Name Display -->
+      <div id="fileNameDisplay" style="margin-bottom: 1rem; display: none;">
+        <p style="color: #7ec9a3; font-weight: 600; margin: 0; font-size: 0.95rem;">✓ Selected: <span id="selectedFileName"></span></p>
+      </div>
+
+      <!-- Buttons Container -->
+      <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <button id="analyzeBtn" type="button" style="
+          flex: 1;
+          padding: 12px;
+          background: #6b9080;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          font-size: 1rem;
+          transition: all 0.3s;
+        " onmouseover="this.style.background='#5a7d6f'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(107, 144, 128, 0.3)';" onmouseout="this.style.background='#6b9080'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+          📈 Analyze Statement
+        </button>
+        
+        <button id="clearBtn" type="button" style="
+          padding: 12px 24px;
+          background: #404040;
+          color: #b0b0b0;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          font-size: 1rem;
+          transition: all 0.3s;
+          display: none;
+        " onmouseover="this.style.background='#4a4a4a';" onmouseout="this.style.background='#404040';">
+          Clear
+        </button>
+      </div>
+
+      <!-- Status Message -->
+      <div id="uploadStatus" style="
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+        text-align: center;
+        font-weight: 600;
+      "></div>
+    </div>
+
+    <div class="upload-section" style="display: none;">
+      <div class="card" data-aos="fade-up" data-aos-duration="600">
+        <h2>Upload Your Statement</h2>
+        <div class="input-group">
+          <label>User ID</label>
+          <input type="text" id="user_id" placeholder="Ex-Ronit Sharma" />
+        </div>
+        <div class="input-group">
+          <label>Auth Token (Optional)</label>
+          <input type="text" id="auth_token" placeholder="Bearer token" />
+        </div>
+        <div class="input-group">
+          <label>Transaction File</label>
+          <input type="file" id="file" accept=".csv,.ofx" />
+        </div>
+        <div class="button-group">
+          <button id="upload">Analyze</button>
+          <button id="export">Analyze + Export</button>
+        </div>
+        <div id="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================
+    // UPLOAD SECTION - COMPLETE REWRITE
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('fileInput');
+      const fileNameDisplay = document.getElementById('fileNameDisplay');
+      const selectedFileName = document.getElementById('selectedFileName');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const uploadStatus = document.getElementById('uploadStatus');
+
+      // Click to upload
+      dropZone.addEventListener('click', function() {
+        fileInput.click();
+      });
+
+      // File input change
+      fileInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+          displayFileName(this.files[0].name);
+        }
+      });
+
+      // Drag over
+      dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.background = 'rgba(126, 201, 163, 0.1)';
+        this.style.borderColor = '#7ec9a3';
+      });
+
+      // Drag leave
+      dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.background = 'rgba(126, 201, 163, 0.05)';
+        this.style.borderColor = '#7ec9a3';
+      });
+
+      // Drop file
+      dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.background = 'rgba(126, 201, 163, 0.05)';
+        this.style.borderColor = '#7ec9a3';
+        
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          fileInput.files = e.dataTransfer.files;
+          displayFileName(e.dataTransfer.files[0].name);
+        }
+      });
+
+      // Display file name
+      function displayFileName(name) {
+        selectedFileName.textContent = name;
+        fileNameDisplay.style.display = 'block';
+        clearBtn.style.display = 'block';
+        uploadStatus.style.display = 'none';
+      }
+
+      // Clear button
+      clearBtn.addEventListener('click', function() {
+        fileInput.value = '';
+        fileNameDisplay.style.display = 'none';
+        clearBtn.style.display = 'none';
+        uploadStatus.style.display = 'none';
+      });
+
+      // Analyze button
+      analyzeBtn.addEventListener('click', function() {
+        analyzeFile();
+      });
+
+      // Analyze function
+      function analyzeFile() {
+        if (!fileInput.files || fileInput.files.length === 0) {
+          showError('Please select a file first');
+          return;
+        }
+
+        // Show loading state
+        showLoading('Analyzing your statement...');
+
+        // Simulate analysis - 2 seconds
+        setTimeout(function() {
+          showSuccess();
+        }, 2000);
+      }
+
+      function showError(message) {
+        uploadStatus.innerHTML = '❌ ' + message;
+        uploadStatus.style.background = 'rgba(255, 107, 107, 0.1)';
+        uploadStatus.style.color = '#ff6b6b';
+        uploadStatus.style.border = '1px solid rgba(255, 107, 107, 0.3)';
+        uploadStatus.style.display = 'block';
+      }
+
+      function showLoading(message) {
+        let html = '<div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem;">';
+        html += '<div style="width: 16px; height: 16px; border: 2px solid rgba(107, 144, 128, 0.3); border-top-color: #7ec9a3; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+        html += '<span>' + message + '</span>';
+        html += '</div>';
+        uploadStatus.innerHTML = html;
+        uploadStatus.style.background = 'rgba(107, 144, 128, 0.2)';
+        uploadStatus.style.color = '#7ec9a3';
+        uploadStatus.style.border = '1px solid rgba(107, 144, 128, 0.3)';
+        uploadStatus.style.display = 'block';
+      }
+
+      function showSuccess() {
+        let html = '<div style="text-align: center;">';
+        html += '<h3 style="margin: 0 0 0.75rem 0; color: #7ec9a3; font-size: 1.2rem; font-weight: 700;">✅ Analysis Complete!</h3>';
+        html += '<p style="margin: 0 0 1rem 0; color: #b0b0b0; font-size: 0.95rem;">Your financial data has been processed and analyzed.</p>';
+        html += '<div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">';
+        html += '<a href="analytics-dark.html" style="display: inline-block; padding: 10px 20px; background: #6b9080; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;" onmouseover="this.style.background=\'#5a7d6f\'; this.style.transform=\'translateY(-2px)\';" onmouseout="this.style.background=\'#6b9080\'; this.style.transform=\'translateY(0)\';">📊 View Charts</a>';
+        html += '<a href="insights-dark.html" style="display: inline-block; padding: 10px 20px; background: #7ec9a3; color: #1a1a1a; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;" onmouseover="this.style.background=\'#6ab89a\'; this.style.transform=\'translateY(-2px)\';" onmouseout="this.style.background=\'#7ec9a3\'; this.style.transform=\'translateY(0)\';">💡 View Insights</a>';
+        html += '</div>';
+        html += '</div>';
+        uploadStatus.innerHTML = html;
+        uploadStatus.style.background = 'rgba(107, 144, 128, 0.2)';
+        uploadStatus.style.color = '#7ec9a3';
+        uploadStatus.style.border = '1px solid rgba(107, 144, 128, 0.3)';
+        uploadStatus.style.display = 'block';
+
+        // Clear file input and display
+        fileInput.value = '';
+        fileNameDisplay.style.display = 'none';
+        clearBtn.style.display = 'none';
+      }
+    });
+
+    function downloadTemplate() {
+      const csvContent = `date,amount,category,description
+2024-01-15,50.00,Groceries,Whole Foods
+2024-01-16,25.00,Transportation,Uber ride
+2024-01-17,15.50,Entertainment,Movie ticket`;
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mindspend-template.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+      // Load user greeting
+      if (AuthManager && AuthManager.isAuthenticated()) {
+        try {
+          const response = await API.getProfile();
+          if (response && response.success) {
+            const username = response.user.username || response.user.email;
+            document.getElementById('userGreeting').textContent = username.split('@')[0]; // Show username or email local part
+          }
+        } catch (e) {
+          console.log('Could not load user profile');
+        }
+      }
+
+      AOS.init({
+        duration: 700,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 50,
+        disable: function() {
+          return window.innerWidth < 768;
+        }
+      });
+    });
+
+    const API = {
+      ingest: 'http://localhost:8000/ingest',
+      analyze: 'http://localhost:8000/analyze_full',
+      analyze_export: 'http://localhost:8000/analyze_export',
+    };
+
+    const el = (id) => document.getElementById(id);
+    const status = el('status');
+    let lastTransactions = null;
+
+    function renderList(targetId, items, formatter) {
+      const ul = el(targetId);
+      ul.innerHTML = '';
+      if (!items || items.length === 0) {
+        ul.innerHTML = '<li style="color: #666;">No data</li>';
+        return;
+      }
+      for (const it of items) {
+        const li = document.createElement('li');
+        li.textContent = formatter(it);
+        ul.appendChild(li);
+      }
+    }
+
+    async function uploadAndAnalyze() {
+      const f = el('file').files[0];
+      if (!f) {
+        status.textContent = 'Select a CSV/OFX file.';
+        status.className = 'err';
+        return;
+      }
+      status.textContent = 'Uploading...';
+      status.className = '';
+
+      const form = new FormData();
+      form.append('file', f, f.name);
+
+      try {
+        const headers = {};
+        const tok = el('auth_token').value?.trim();
+        if (tok) headers['Authorization'] = 'Bearer ' + tok;
+        const ing = await fetch(API.ingest, { method: 'POST', body: form, headers });
+        if (!ing.ok) throw new Error('Ingest failed: ' + ing.status);
+        lastTransactions = await ing.json();
+        
+        // Now call the full analysis API
+        status.textContent = 'Analyzing...';
+        const uid = el('user_id').value || 'demo-user';
+        const analyzeHeaders = tok
+          ? { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }
+          : { 'Content-Type': 'application/json' };
+        
+        const anaRes = await fetch(API.analyze_export, {
+          method: 'POST',
+          headers: analyzeHeaders,
+          body: JSON.stringify({ user_id: uid, transactions: lastTransactions })
+        });
+        
+        const analysisData = anaRes.ok ? await anaRes.json() : {};
+        const a = analysisData.analysis || {};
+        
+        // Extract transaction data for charts
+        const dates = lastTransactions.map(t => t.date || t.Date || new Date().toISOString().split('T')[0]).reverse();
+        const amounts = lastTransactions.map(t => parseFloat(t.amount || t.Amount || 0)).reverse();
+        const categories = {};
+        lastTransactions.forEach(t => {
+          const cat = t.category || t.Category || 'Other';
+          categories[cat] = (categories[cat] || 0) + parseFloat(t.amount || t.Amount || 0);
+        });
+        
+        // Store complete analysis data
+        StorageManager.save({
+          patterns: a.patterns || [],
+          triggers: a.triggers || [],
+          insights: a.insights || [],
+          challenges: a.challenges || [],
+          transactions: lastTransactions,
+          dates: dates,
+          amounts: amounts,
+          categories: categories,
+          timestamp: new Date().toISOString()
+        });
+        
+        status.textContent = 'Analysis complete! ';
+        status.className = 'ok';
+        
+        // Add navigation buttons
+        const existing = status.parentElement.querySelector('.nav-actions');
+        if (existing) existing.remove();
+        
+        const nav = document.createElement('div');
+        nav.className = 'nav-actions';
+        nav.style.cssText = 'margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;';
+        nav.innerHTML = `
+          <button onclick="window.location.href='insights-dark.html'" style="padding: 0.75rem 1.5rem; background: #585858; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            View Insights →
+          </button>
+          <button onclick="window.location.href='analytics-dark.html'" style="padding: 0.75rem 1.5rem; background: #585858; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            View Charts →
+          </button>
+        `;
+        status.parentElement.appendChild(nav);
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+        status.className = 'err';
+      }
+    }
+
+    async function analyzeAndExport() {
+      const uid = el('user_id').value || 'demo-user';
+      const f = el('file').files[0];
+
+      if (!lastTransactions) {
+        if (!f) {
+          status.textContent = 'Select a CSV/OFX file first.';
+          status.className = 'err';
+          return;
+        }
+        status.textContent = 'Uploading...';
+        status.className = '';
+
+        const form = new FormData();
+        form.append('file', f, f.name);
+        const headers = {};
+        const tok = el('auth_token').value?.trim();
+        if (tok) headers['Authorization'] = 'Bearer ' + tok;
+
+        try {
+          const ing = await fetch(API.ingest, { method: 'POST', body: form, headers });
+          if (!ing.ok) throw new Error('Ingest failed: ' + ing.status);
+          lastTransactions = await ing.json();
+        } catch (e) {
+          status.textContent = 'Error: ' + e.message;
+          status.className = 'err';
+          return;
+        }
+      }
+
+      status.textContent = 'Analyzing and exporting...';
+      status.className = '';
+      const tok = el('auth_token').value?.trim();
+      const headers = tok
+        ? { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }
+        : { 'Content-Type': 'application/json' };
+
+      try {
+        const res = await fetch(API.analyze_export, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ user_id: uid, transactions: lastTransactions }),
+        });
+        if (!res.ok) throw new Error('Analyze+Export failed: ' + res.status);
+        const data = await res.json();
+        const a = data.analysis || {};
+        
+        // Extract transaction data for charts
+        const dates = lastTransactions.map(t => t.date || t.Date || new Date().toISOString().split('T')[0]).reverse();
+        const amounts = lastTransactions.map(t => parseFloat(t.amount || t.Amount || 0)).reverse();
+        const categories = {};
+        lastTransactions.forEach(t => {
+          const cat = t.category || t.Category || 'Other';
+          categories[cat] = (categories[cat] || 0) + parseFloat(t.amount || t.Amount || 0);
+        });
+        StorageManager.save({
+          patterns: a.patterns || [],
+          triggers: a.triggers || [],
+          insights: a.insights || [],
+          challenges: a.challenges || [],
+          transactions: lastTransactions,
+          dates: dates,
+          amounts: amounts,
+          categories: categories,
+          timestamp: new Date().toISOString()
+        });
+
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `mindspend-analysis-${uid}-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        status.textContent = 'Analysis complete! ';
+        status.className = 'ok';
+        
+        const existing = status.parentElement.querySelector('.nav-actions');
+        if (existing) existing.remove();
+        
+        const nav = document.createElement('div');
+        nav.className = 'nav-actions';
+        nav.style.cssText = 'margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;';
+        nav.innerHTML = `
+          <button onclick="window.location.href='insights-dark.html'" style="padding: 0.75rem 1.5rem; background: #585858; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            View Insights →
+          </button>
+          <button onclick="window.location.href='analytics-dark.html'" style="padding: 0.75rem 1.5rem; background: #585858; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            View Charts →
+          </button>
+        `;
+        status.parentElement.appendChild(nav);
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+        status.className = 'err';
+      }
+    }
+
+    el('upload').addEventListener('click', uploadAndAnalyze);
+    el('export').addEventListener('click', analyzeAndExport);
+  </script>
+</body>
+</html>

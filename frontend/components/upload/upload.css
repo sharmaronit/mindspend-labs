@@ -1,0 +1,122 @@
+/* Upload Form Styling */
+.input-group {
+  margin-bottom: 1.25rem;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #636e72;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+input[type="text"],
+input[type="file"] {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: #f9f8f6;
+  border: 2px solid #e0ddd5;
+  border-radius: 12px;
+  color: #2d3436;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: #6b9080;
+  box-shadow: 0 0 0 3px rgba(107, 144, 128, 0.1);
+}
+
+input[type="text"]::placeholder {
+  color: #b2bec3;
+}
+
+input[type="file"]::file-selector-button {
+  padding: 0.5rem 1rem;
+  background: #6b9080;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-right: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: #5a7d6f;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+button {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  background: #6b9080;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(107, 144, 128, 0.2);
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+
+button:hover {
+  background: #5a7d6f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(107, 144, 128, 0.3);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button#export {
+  background: #a4c3b2;
+  box-shadow: 0 2px 8px rgba(164, 195, 178, 0.2);
+}
+
+button#export:hover {
+  background: #8fb0a0;
+  box-shadow: 0 4px 16px rgba(164, 195, 178, 0.3);
+}
+
+#status {
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  font-weight: 500;
+  text-align: center;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+}
+
+.ok {
+  color: #6b9080;
+  background: rgba(107, 144, 128, 0.1);
+  border-color: rgba(107, 144, 128, 0.3);
+}
+
+.err {
+  color: #d63031;
+  background: rgba(214, 48, 49, 0.1);
+  border-color: rgba(214, 48, 49, 0.3);
+}

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insights — MindSpend Labs (Dark Mode)</title>
+  
+  <!-- Google Sora Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- AOS (Animate On Scroll) Library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  
+  <!-- Unified Storage Manager -->
+  <script src="utils/storage.js"></script>
+  
+  <!-- Authentication & Navigation -->
+  <script src="utils/auth.js"></script>
+  <script src="utils/api.js"></script>
+  <script src="utils/navigation.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --stripe-size: 100px;
+      --color1: #fcf8f8;
+      --color2: #313131;
+      --duration: 2s;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: auto;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      color: #e0e0e0;
+      padding: 0;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      margin: 0;
+      background: #000;
+      position: relative;
+    }
+
+    /* Stripe background container */
+    .stripe {
+      position: fixed;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .stripe_inner {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color1) 25%,
+        var(--color1) 50%,
+        var(--color2) 50%,
+        var(--color2) 75%
+      );
+      background-size: var(--stripe-size) var(--stripe-size);
+      background-clip: text;
+      animation: stripeBackgroundPosition var(--duration) linear infinite;
+    }
+
+    .stripe::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: calc(100% + var(--stripe-size));
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color2) 25%,
+        var(--color2) 50%,
+        var(--color1) 50%,
+        var(--color1) 75%
+      );
+      background-size: var(--stripe-size) var(--stripe-size);
+      animation: stripeTransform var(--duration) linear infinite;
+      z-index: -1;
+    }
+
+    .stripe::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, rgba(27, 39, 53, 0) 0%, #090a0f 100%);
+      z-index: 0;
+    }
+
+    @keyframes stripeTransform {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(calc(var(--stripe-size) * -1));
+      }
+    }
+
+    @keyframes stripeBackgroundPosition {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: calc(var(--stripe-size) * -1) 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 2rem 0;
+    }
+
+    header h1 {
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: #e0e0e0;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #a0a0a0;
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-buttons {
+      text-align: center;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-buttons button {
+      padding: 0.75rem 1.5rem;
+      background: #090a0f;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      font-family: inherit;
+    }
+
+    .nav-buttons button:hover {
+      background: #2a2a2a;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .nav-buttons button.secondary {
+      background: #090a0f;
+    }
+
+    .nav-buttons button.secondary:hover {
+      background: #2a2a2a;
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform, box-shadow;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    .card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      border-color: #e0e0e0;
+    }
+
+    .card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    ul {
+      padding-left: 1.5rem;
+      color: #e0e0e0;
+    }
+
+    ul li {
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+
+    ul li::marker {
+      color: #e0e0e0;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #666;
+    }
+
+    .no-data h2 {
+      color: #a0a0a0;
+      margin-bottom: 1rem;
+    }
+
+    .no-data button {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      background: #2a2a2a;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .no-data button:hover {
+      background: #2a2a2a;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+      .nav-buttons {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Striped Background -->
+  <div class="stripe">
+    <div class="stripe_inner"></div>
+  </div>
+
+  <div class="content-wrapper">
+    <header>
+      <h1>Your Financial Insights</h1>
+      <p>Understanding Your Spending Behavior</p>
+    </header>
+
+    <div class="nav-buttons">
+      <button onclick="window.location.href='index-dark.html'">← Back to Upload</button>
+      <button class="secondary" onclick="window.location.href='analytics-dark.html'">View Charts →</button>
+    </div>
+
+    <div class="container" id="insights-container">
+      <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="100">
+        <h3>Your Spending Habits</h3>
+        <ul id="patterns"></ul>
+      </div>
+
+      <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="200">
+        <h3>When You Spend More</h3>
+        <ul id="triggers"></ul>
+      </div>
+
+      <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="300">
+        <h3>What We Found</h3>
+        <ul id="insights"></ul>
+      </div>
+
+      <div class="card" data-aos="fade-up" data-aos-duration="700" data-aos-delay="400">
+        <h3>Tips to Save Money</h3>
+        <ul id="challenges"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      AOS.init({
+        duration: 700,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 50,
+        disable: function() {
+          return window.innerWidth < 768;
+        }
+      });
+
+      loadInsights();
+    });
+
+    function loadInsights() {
+      const data = StorageManager.load();
+      
+      if (!data) {
+        document.getElementById('insights-container').innerHTML = `
+          <div class="no-data">
+            <h2>No Analysis Data Found</h2>
+            <p>Please upload and analyze your bank statement first.</p>
+            <button onclick="window.location.href='index-dark.html'">Go to Upload</button>
+          </div>
+        `;
+        return;
+      }
+
+      const analysis = data;
+      renderList('patterns', analysis.patterns || [], 
+        (p) => `${p.type} (confidence ${(p.confidence || 0).toFixed(2)})`);
+
+      renderList('triggers', analysis.triggers || [], 
+        (t) => `${t.factor} (strength ${(t.signal_strength || 0).toFixed(2)})`);
+
+      renderList('insights', analysis.insights || [], 
+        (i) => `${i.summary}`);
+
+      renderList('challenges', analysis.challenges || [], 
+        (c) => `${c.goal} — ${JSON.stringify(c.rules)}`);
+    }
+
+    function renderList(targetId, items, formatter) {
+      const ul = document.getElementById(targetId);
+      ul.innerHTML = '';
+      
+      if (!items || items.length === 0) {
+        ul.innerHTML = '<li style="color: #666;">No data available</li>';
+        return;
+      }
+
+      items.forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = formatter(item);
+        ul.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>

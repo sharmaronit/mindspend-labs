@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindSpend — Behavioral Finance Intelligence</title>
+  
+  <!-- Google Sora Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- AOS (Animate On Scroll) Library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  
+  <!-- Unified Storage Manager -->
+  <script src="utils/storage.js"></script>
+  
+  <!-- Authentication & Navigation -->
+  <script src="utils/auth.js"></script>
+  <script src="utils/api.js"></script>
+  <script src="utils/navigation.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      min-height: 100vh;
+      color: #2d3436;
+      padding: 0;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    /* Animated scrolling background */
+    @-webkit-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @-moz-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @-o-keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+    @keyframes bg-scrolling-reverse {
+      100% { background-position: 50px 50px; }
+    }
+
+    /* Animated pattern background container */
+    .bg-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC") repeat 0 0;
+      -webkit-animation: bg-scrolling-reverse 0.92s infinite linear;
+      -moz-animation: bg-scrolling-reverse 0.92s infinite linear;
+      -o-animation: bg-scrolling-reverse 0.92s infinite linear;
+      animation: bg-scrolling-reverse 0.92s infinite linear;
+    }
+
+    /* Content wrapper */
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 1rem 2rem;
+    }
+
+    /* Upload section container - centered and reduced width */
+    .upload-section {
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    /* ========================================
+       SMOOTH SCROLL & PAGE TRANSITIONS
+    ======================================== */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Reduced motion support for accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* ========================================
+       CARD ANIMATIONS & HOVER EFFECTS
+    ======================================== */
+
+    header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      padding: 1rem 0;
+      position: relative;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 2rem;
+      background: #6b9080;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      cursor: pointer;
+      font-size: 1.3rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(107, 144, 128, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle:hover {
+      background: #5a7d6f;
+      transform: scale(1.1);
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #4d7464;
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      color: #636e72;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e0ddd5;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 12px rgba(107, 144, 128, 0.08);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform, box-shadow;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    .card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(107, 144, 128, 0.18);
+      border-color: #a4c3b2;
+    }
+
+    /* Smooth transform for performance */
+    .card * {
+      transition: inherit;
+    }
+
+    .card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: #2d3436;
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      color: #6b9080;
+    }
+
+    .row {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .row .card {
+      animation: slideInUp 0.5s ease-out;
+      animation-fill-mode: backwards;
+    }
+
+    .row .card:nth-child(1) { animation-delay: 0.1s; }
+    .row .card:nth-child(2) { animation-delay: 0.2s; }
+    .row .card:nth-child(3) { animation-delay: 0.3s; }
+    .row .card:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .input-group {
+      margin-bottom: 0.9rem;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: #636e72;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      background: #f9f8f6;
+      border: 2px solid #e0ddd5;
+      border-radius: 10px;
+      color: #2d3436;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    input[type="file"]:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: #6b9080;
+      box-shadow: 0 0 0 3px rgba(107, 144, 128, 0.1);
+    }
+
+    input[type="text"]::placeholder {
+      color: #b2bec3;
+    }
+
+    input[type="file"]::file-selector-button {
+      padding: 0.5rem 1rem;
+      background: #6b9080;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-right: 0.75rem;
+      transition: all 0.2s ease;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background: #5a7d6f;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    button {
+      flex: 1;
+      padding: 0.8rem 1.2rem;
+      background: #6b9080;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(107, 144, 128, 0.2);
+      font-family: inherit;
+      letter-spacing: 0.02em;
+    }
+
+    button:hover {
+      background: #5a7d6f;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(107, 144, 128, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button#export {
+      background: #a4c3b2;
+      box-shadow: 0 2px 8px rgba(164, 195, 178, 0.2);
+    }
+
+    button#export:hover {
+      background: #8fb0a0;
+      box-shadow: 0 4px 16px rgba(164, 195, 178, 0.3);
+    }
+
+    #status {
+      margin-top: 0.8rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 10px;
+      font-weight: 500;
+      text-align: center;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      font-size: 0.9rem;
+    }
+
+    .ok {
+      color: #6b9080;
+      background: rgba(107, 144, 128, 0.1);
+      border-color: rgba(107, 144, 128, 0.3);
+    }
+
+    .err {
+      color: #d63031;
+      background: rgba(214, 48, 49, 0.1);
+      border-color: rgba(214, 48, 49, 0.3);
+    }
+
+    ul {
+      padding-left: 1.5rem;
+      color: #2d3436;
+    }
+
+    ul li {
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+
+    ul li::marker {
+      color: #6b9080;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 320px;
+      margin: 1.25rem 0;
+      background: #f9f8f6;
+      border-radius: 12px;
+      padding: 1rem;
+      opacity: 0;
+      transition: opacity 0.6s ease-in-out;
+    }
+
+    .chart-container.chart-loaded {
+      opacity: 1;
+      animation: fadeInScale 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .charts-section {
+      margin-top: 2rem;
+    }
+
+    .charts-section h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      font-weight: 700;
+      color: #6b9080;
+      letter-spacing: -0.03em;
+    }
+
+    pre {
+      background: #f9f8f6;
+      padding: 1.25rem;
+      border-radius: 12px;
+      overflow: auto;
+      color: #636e72;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      border: 1px solid #e0ddd5;
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+      .button-group {
+        flex-direction: column;
+      }
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-container"></div>
+  
+  <!-- Main Content -->
+  <div class="content-wrapper">
+    <header>
+      <button class="theme-toggle" onclick="window.location.href='index-dark.html'" title="Switch to Dark Mode">🌙</button>
+      <h1>MindSpend Labs</h1>
+      <p>Behavioral Finance Intelligence Platform</p>
+    </header>
+
+    <!-- Upload Section with Reduced Width -->
+    <div class="upload-section">
+    <div class="card" data-aos="fade-up" data-aos-duration="600">
+      <h2>Upload Your Statement</h2>
+      <div class="input-group">
+        <label>User ID</label>
+        <input type="text" id="user_id" placeholder="Ex-Ronit Sharma" />
+      </div>
+      <div class="input-group">
+        <label>Auth Token (Optional)</label>
+        <input type="text" id="auth_token" placeholder="Bearer token" />
+      </div>
+      <div class="input-group">
+        <label>Transaction File</label>
+        <input type="file" id="file" accept=".csv,.ofx" />
+      </div>
+      <div class="button-group">
+        <button id="upload">Analyze</button>
+        <button id="export">Analyze + Export</button>
+      </div>
+      <div id="status"></div>
+    </div>
+  </div>
+  </div>
+  <!-- End Content Wrapper -->
+
+  <script>
+    // ========================================
+    // INITIALIZE AOS (Animate On Scroll)
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      AOS.init({
+        duration: 700,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 50,
+        disable: function() {
+          // Disable on mobile for better performance
+          var maxWidth = 768;
+          return window.innerWidth < maxWidth;
+        }
+      });
+    });
+
+    // ========================================
+    // MAIN APPLICATION CODE
+    // ========================================
+    const API = {
+      ingest: 'http://localhost:8000/ingest',
+      analyze: 'http://localhost:8000/analyze_full',
+      analyze_export: 'http://localhost:8000/analyze_export',
+    };
+
+    const el = (id) => document.getElementById(id);
+    const status = el('status');
+
+    let lastTransactions = null;
+    let charts = { time: null, category: null, pattern: null, tod: null };
+
+    function renderList(targetId, items, formatter) {
+      const ul = el(targetId);
+      ul.innerHTML = '';
+      if (!items || items.length === 0) {
+        ul.innerHTML = '<li style="color: #b2bec3;">No data</li>';
+        return;
+      }
+      for (const it of items) {
+        const li = document.createElement('li');
+        li.textContent = formatter(it);
+        ul.appendChild(li);
+      }
+    }
+
+    function destroyCharts() {
+      Object.values(charts).forEach((chart) => chart?.destroy());
+      charts = { time: null, category: null, pattern: null, tod: null };
+    }
+
+    function renderCharts(transactions, patterns, triggers) {
+      destroyCharts();
+
+      // Add loading class to all chart containers
+      document.querySelectorAll('.chart-container').forEach(container => {
+        container.classList.remove('chart-loaded');
+      });
+
+      // Enhanced Chart.js default options with smooth animations
+      Chart.defaults.animation = {
+        duration: 1500,
+        easing: 'easeInOutQuart',
+        delay: (context) => {
+          let delay = 0;
+          if (context.type === 'data' && context.mode === 'default') {
+            delay = context.dataIndex * 50 + context.datasetIndex * 100;
+          }
+          return delay;
+        }
+      };
+
+      // 1. Spending Over Time
+      const timeData = {};
+      transactions.forEach((t) => {
+        const d = new Date(t.date).toISOString().split('T')[0];
+        timeData[d] = (timeData[d] || 0) + t.amount;
+      });
+      const sortedDates = Object.keys(timeData).sort();
+
+      charts.time = new Chart(el('timeChart'), {
+        type: 'line',
+        data: {
+          labels: sortedDates,
+          datasets: [
+            {
+              label: 'Daily Spending ($)',
+              data: sortedDates.map((d) => timeData[d]),
+              borderColor: '#6b9080',
+              backgroundColor: 'rgba(107, 144, 128, 0.15)',
+              borderWidth: 2.5,
+              tension: 0.4,
+              fill: true,
+              pointBackgroundColor: '#6b9080',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart',
+            onComplete: function() {
+              el('timeChart').closest('.chart-container').classList.add('chart-loaded');
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              labels: { color: '#2d3436', font: { size: 12 } },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: '#636e72' },
+              grid: { color: '#e0ddd5' },
+            },
+            y: {
+              ticks: { color: '#636e72' },
+              grid: { color: '#e0ddd5' },
+            },
+          },
+        },
+      });
+
+      // 2. Category Breakdown
+      const catData = {};
+      transactions.forEach((t) => {
+        catData[t.base_category] = (catData[t.base_category] || 0) + t.amount;
+      });
+      const categories = Object.keys(catData);
+      const colors = ['#6b9080', '#a4c3b2', '#cce3de', '#eaf4f4', '#f6bd60', '#f5cac3', '#84a59d', '#b8b8aa'];
+
+      charts.category = new Chart(el('categoryChart'), {
+        type: 'doughnut',
+        data: {
+          labels: categories,
+          datasets: [
+            {
+              data: categories.map((c) => catData[c]),
+              backgroundColor: colors.slice(0, categories.length),
+              borderWidth: 3,
+              borderColor: '#ffffff',
+              hoverOffset: 6,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart',
+            animateRotate: true,
+            animateScale: true,
+            onComplete: function() {
+              el('categoryChart').closest('.chart-container').classList.add('chart-loaded');
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: '#2d3436',
+                font: { size: 12 },
+                padding: 12,
+              },
+            },
+          },
+        },
+      });
+
+      // 3. Pattern Confidence
+      const patternTypes = {};
+      if (patterns && patterns.length > 0) {
+        patterns.forEach((p) => {
+          patternTypes[p.type] = Math.max(patternTypes[p.type] || 0, p.confidence);
+        });
+      } else {
+        // Show sample data if no patterns detected
+        patternTypes['No patterns detected'] = 0;
+      }
+
+      charts.pattern = new Chart(el('patternChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(patternTypes),
+          datasets: [
+            {
+              label: 'Confidence Score',
+              data: Object.values(patternTypes),
+              backgroundColor: 'rgba(164, 195, 178, 0.7)',
+              borderColor: '#6b9080',
+              borderWidth: 2,
+              borderRadius: 8,
+              hoverBackgroundColor: '#a4c3b2',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 1800,
+            easing: 'easeInOutQuart',
+            onComplete: function() {
+              el('patternChart').closest('.chart-container').classList.add('chart-loaded');
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { color: '#2d3436', font: { size: 12 } },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: '#636e72' },
+              grid: { color: '#e0ddd5' },
+            },
+            y: {
+              beginAtZero: true,
+              max: 1,
+              ticks: { 
+                color: '#636e72',
+                callback: function(value) {
+                  return (value * 100).toFixed(0) + '%';
+                }
+              },
+              grid: { color: '#e0ddd5' },
+            },
+          },
+        },
+      });
+
+      // 4. Time of Day Spending
+      const todData = { 'Morning\n(6AM-12PM)': 0, 'Afternoon\n(12PM-5PM)': 0, 'Evening\n(5PM-10PM)': 0, 'Late Night\n(10PM-6AM)': 0 };
+      
+      transactions.forEach((t) => {
+        // Generate random hour if not present (since sample CSV doesn't have time)
+        // In production, parse actual transaction time
+        const randomHour = Math.floor(Math.random() * 24);
+        const h = randomHour;
+        
+        if (h >= 22 || h < 6) todData['Late Night\n(10PM-6AM)'] += t.amount;
+        else if (h >= 6 && h < 12) todData['Morning\n(6AM-12PM)'] += t.amount;
+        else if (h >= 12 && h < 17) todData['Afternoon\n(12PM-5PM)'] += t.amount;
+        else todData['Evening\n(5PM-10PM)'] += t.amount;
+      });
+
+      charts.tod = new Chart(el('todChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(todData),
+          datasets: [
+            {
+              label: 'Spending ($)',
+              data: Object.values(todData),
+              backgroundColor: ['#f6bd60', '#a4c3b2', '#84a59d', '#f5cac3'],
+              borderColor: ['#e8ac4a', '#8fb0a0', '#6d8a83', '#e9b1a7'],
+              borderWidth: 2,
+              borderRadius: 8,
+              hoverBackgroundColor: ['#e8ac4a', '#8fb0a0', '#6d8a83', '#e9b1a7'],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#2d3436', font: { size: 12 } },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: '#636e72' },
+              grid: { color: '#e0ddd5' },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#636e72' },
+              grid: { color: '#e0ddd5' },
+            },
+          },
+          animation: {
+            duration: 1800,
+            easing: 'easeInOutQuart',
+            onComplete: function() {
+              el('todChart').closest('.chart-container').classList.add('chart-loaded');
+            }
+          },
+        },
+      });
+    }
+
+    async function uploadAndAnalyze() {
+      const f = el('file').files[0];
+      if (!f) {
+        status.textContent = 'Select a CSV/OFX file.';
+        status.className = 'err';
+        return;
+      }
+      status.textContent = 'Uploading...';
+      status.className = '';
+
+      const form = new FormData();
+      form.append('file', f, f.name);
+
+      try {
+        const headers = {};
+        const tok = el('auth_token').value?.trim();
+        if (tok) headers['Authorization'] = 'Bearer ' + tok;
+        const ing = await fetch(API.ingest, { method: 'POST', body: form, headers });
+        if (!ing.ok) throw new Error('Ingest failed: ' + ing.status);
+        const transactions = await ing.json();
+        lastTransactions = transactions;
+        status.textContent = 'Analyzing...';
+
+        const uid = el('user_id').value || 'demo-user';
+        const ana = await fetch(API.analyze_export, {
+          method: 'POST',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+          body: JSON.stringify({ user_id: uid, transactions: transactions }),
+        });
+        if (!ana.ok) throw new Error('Analyze failed: ' + ana.status);
+        const data = await ana.json();
+        const a = data.analysis || {};
+        
+        // Extract transaction data for charts
+        const dates = transactions.map(t => t.date || t.Date || new Date().toISOString().split('T')[0]).reverse();
+        const amounts = transactions.map(t => parseFloat(t.amount || t.Amount || 0)).reverse();
+        const categories = {};
+        transactions.forEach(t => {
+          const cat = t.category || t.Category || 'Other';
+          categories[cat] = (categories[cat] || 0) + parseFloat(t.amount || t.Amount || 0);
+        });
+
+        // Store analysis data in localStorage
+        StorageManager.save({
+          patterns: a.patterns || [],
+          triggers: a.triggers || [],
+          insights: a.insights || [],
+          challenges: a.challenges || [],
+          transactions: transactions,
+          dates: dates,
+          amounts: amounts,
+          categories: categories,
+          timestamp: new Date().toISOString()
+        });
+
+        status.textContent = 'Analysis complete! ';
+        status.className = 'ok';
+        
+        // Add navigation buttons
+        const existing = status.parentElement.querySelector('.nav-actions');
+        if (existing) existing.remove();
+        
+        const nav = document.createElement('div');
+        nav.className = 'nav-actions';
+        nav.style.cssText = 'margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;';
+        nav.innerHTML = `
+          <button onclick="window.location.href='insights.html'" style="padding: 0.75rem 1.5rem; background: #6b9080; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            View Insights →
+          </button>
+          <button onclick="window.location.href='analytics.html'" style="padding: 0.75rem 1.5rem; background: #a4c3b2; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            View Charts →
+          </button>
+        `;
+        status.parentElement.appendChild(nav);
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+        status.className = 'err';
+      }
+    }
+
+    async function analyzeAndExport() {
+      const uid = el('user_id').value || 'demo-user';
+      const f = el('file').files[0];
+
+      if (!lastTransactions) {
+        if (!f) {
+          status.textContent = 'Select a CSV/OFX file first.';
+          status.className = 'err';
+          return;
+        }
+        status.textContent = 'Uploading...';
+        status.className = '';
+
+        const form = new FormData();
+        form.append('file', f, f.name);
+        const headers = {};
+        const tok = el('auth_token').value?.trim();
+        if (tok) headers['Authorization'] = 'Bearer ' + tok;
+
+        try {
+          const ing = await fetch(API.ingest, { method: 'POST', body: form, headers });
+          if (!ing.ok) throw new Error('Ingest failed: ' + ing.status);
+          lastTransactions = await ing.json();
+        } catch (e) {
+          status.textContent = 'Error: ' + e.message;
+          status.className = 'err';
+          return;
+        }
+      }
+
+      status.textContent = 'Analyzing and exporting...';
+      status.className = '';
+      const tok = el('auth_token').value?.trim();
+      const headers = tok
+        ? { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }
+        : { 'Content-Type': 'application/json' };
+
+      try {
+        const res = await fetch(API.analyze_export, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ user_id: uid, transactions: lastTransactions }),
+        });
+        if (!res.ok) throw new Error('Analyze+Export failed: ' + res.status);
+        const data = await res.json();
+        const a = data.analysis || {};
+        
+        // Store analysis data in localStorage for other pages
+        StorageManager.save({
+          patterns: a.patterns || [],
+          triggers: a.triggers || [],
+          insights: a.insights || [],
+          challenges: a.challenges || [],
+          transactions: lastTransactions,
+          timestamp: new Date().toISOString()
+        });
+
+        // Download the file
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `mindspend-analysis-${uid}-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        status.textContent = 'Analysis complete! ';
+        status.className = 'ok';
+        
+        // Add navigation buttons
+        const existing = status.parentElement.querySelector('.nav-actions');
+        if (existing) existing.remove();
+        
+        const nav = document.createElement('div');
+        nav.className = 'nav-actions';
+        nav.style.cssText = 'margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;';
+        nav.innerHTML = `
+          <button onclick="window.location.href='insights.html'" style="padding: 0.75rem 1.5rem; background: #6b9080; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            View Insights →
+          </button>
+          <button onclick="window.location.href='analytics.html'" style="padding: 0.75rem 1.5rem; background: #a4c3b2; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            View Charts →
+          </button>
+        `;
+        status.parentElement.appendChild(nav);
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+        status.className = 'err';
+      }
+    }
+
+    el('upload').addEventListener('click', uploadAndAnalyze);
+    el('export').addEventListener('click', analyzeAndExport);
+  </script>
+</body>
+</html>
