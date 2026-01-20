@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: mindspend-labs-api
+    runtime: python310
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mindspend-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: REFRESH_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "False"
+
+databases:
+  - name: mindspend-db
+    databaseName: mindspend_db
+    user: mindspend
+    region: oregon
